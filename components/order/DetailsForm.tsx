@@ -1,9 +1,12 @@
 "use client";
 
 
+import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { getBouquet, formatUSD } from "@/lib/bouquets";
+import { getBouquet } from "@/lib/bouquets";
+import { slugToPhoto, depositForCents, formatPrice } from "@/lib/gallery";
 import { squareBookingUrl } from "@/lib/square";
 import InspirationUpload from "./InspirationUpload";
 import StylePicker from "./StylePicker";
@@ -13,19 +16,26 @@ export default function DetailsForm() {
   const bouquetId = params.get("bouquet") || "custom";
   const styleSlug = params.get("style");
   const bouquet = getBouquet(bouquetId);
+  const stylePhoto = styleSlug ? slugToPhoto(styleSlug) : null;
+  const cameFromGallery = stylePhoto !== null;
+  const depositCents = stylePhoto
+    ? depositForCents(stylePhoto.priceCents)
+    : bouquet?.depositCents ?? 4000;
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [instagram, setInstagram] = useState("");
-  const [notes, setNotes] = useState(
-    styleSlug ? `Inspired by gallery photo: ${styleSlug}` : "",
-  );
+  const [notes, setNotes] = useState("");
   const [inspirationUrls, setInspirationUrls] = useState<string[]>([]);
   const [inspirationLinks, setInspirationLinks] = useState<string[]>([]);
+  const [paymentType, setPaymentType] = useState<"deposit" | "full">("deposit");
 
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  const totalCents = stylePhoto?.priceCents ?? bouquet?.priceCents ?? 0;
+  const payNowCents = paymentType === "full" ? totalCents : depositCents;
 
   if (!bouquet) {
     return <p className="text-sm text-red-600">Unknown bouquet.</p>;
@@ -51,6 +61,7 @@ export default function DetailsForm() {
           inspirationUrls,
           inspirationLinks,
           galleryStyle: styleSlug || null,
+          paymentType,
         }),
       });
       if (!res.ok) throw new Error(await res.text());
@@ -64,17 +75,112 @@ export default function DetailsForm() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-8">
-      <div className="card-pink flex items-baseline justify-between gap-4">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-blush-700">Selected</p>
-          <p className="serif mt-1 text-2xl">{bouquet!.name}</p>
+      {/* Fast-path product card — only when they came in from the gallery */}
+      {cameFromGallery && stylePhoto && (
+        <div className="overflow-hidden rounded-3xl border border-blush-200 bg-white/70 shadow-card">
+          <div className="grid gap-0 md:grid-cols-2">
+            <div className="relative aspect-square md:aspect-auto md:min-h-[320px]">
+              <Image
+                src={`/gallery/${stylePhoto.file}`}
+                alt="Bouquet you're ordering"
+                fill
+                priority
+                sizes="(min-width: 768px) 50vw, 100vw"
+                className="object-cover"
+              />
+            </div>
+            <div className="flex flex-col justify-center gap-3 p-6 md:p-8">
+              <span className="pill self-start">You&apos;re ordering</span>
+              <h2 className="serif text-3xl leading-tight md:text-4xl">
+                {bouquet!.name}
+              </h2>
+              <p className="text-sm text-ink-soft">
+                Hand-made in this style. Final size, flowers, and personal
+                touches confirmed with Dar.
+              </p>
+
+              <div className="mt-1 flex items-baseline gap-2">
+                <p className="text-[10px] uppercase tracking-[0.14em] text-blush-700">
+                  Starting at
+                </p>
+                <p className="serif text-2xl text-ink">
+                  {formatPrice(stylePhoto.priceCents)}
+                </p>
+                {stylePhoto.note && (
+                  <p className="text-[11px] italic text-blush-800">
+                    · {stylePhoto.note}
+                  </p>
+                )}
+              </div>
+
+              <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-blush-700">
+                How would you like to pay?
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => setPaymentType("deposit")}
+                  aria-pressed={paymentType === "deposit"}
+                  className={`text-left transition hover:shadow-glow ${
+                    paymentType === "deposit" ? "card-pink-active" : "card-pink"
+                  }`}
+                >
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-blush-700">
+                    Pay deposit
+                  </p>
+                  <p className="serif mt-1 text-2xl">{formatPrice(depositCents)}</p>
+                  <p className="mt-1 text-[11px] text-blush-700">
+                    Remainder at pickup
+                  </p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentType("full")}
+                  aria-pressed={paymentType === "full"}
+                  className={`text-left transition hover:shadow-glow ${
+                    paymentType === "full" ? "card-pink-active" : "card-pink"
+                  }`}
+                >
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-blush-700">
+                    Pay in full
+                  </p>
+                  <p className="serif mt-1 text-2xl">{formatPrice(totalCents)}</p>
+                  <p className="mt-1 text-[11px] text-blush-700">
+                    Nothing owed at pickup
+                  </p>
+                </button>
+              </div>
+
+              <Link
+                href="/#gallery"
+                className="mt-2 self-start text-xs text-blush-700 underline hover:text-blush-900"
+              >
+                ← Change selection
+              </Link>
+            </div>
+          </div>
         </div>
-        <div className="text-right">
-          <p className="text-xs text-blush-700">Deposit secures pickup</p>
-          <p className="serif text-2xl">{formatUSD(bouquet!.depositCents)}</p>
-          <p className="text-xs text-blush-700">Remainder due at pickup</p>
+      )}
+
+      {/* Generic "Selected" header — only when they didn't pick a specific photo */}
+      {!cameFromGallery && (
+        <div className="card-pink flex items-center justify-between gap-4">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-blush-700">
+              Selected
+            </p>
+            <p className="serif mt-1 text-2xl">{bouquet!.name}</p>
+            <p className="mt-1 text-xs text-blush-700">
+              Pick a style below — or just tell Dar what you have in mind.
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-blush-700">Deposit today</p>
+            <p className="serif text-2xl">{formatPrice(depositCents)}</p>
+            <p className="text-xs text-blush-700">Remainder at pickup</p>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="grid gap-5 md:grid-cols-2">
         <div>
@@ -96,38 +202,52 @@ export default function DetailsForm() {
       </div>
 
       <div>
-        <label className="label">Tell us about the bouquet</label>
+        <label className="label">
+          {cameFromGallery ? "Any tweaks? (optional)" : "Tell us about the bouquet"}
+        </label>
         <textarea
           className="input min-h-[90px]"
-          placeholder="Occasion, who it's for, colors you love, message for the tag…"
+          placeholder={
+            cameFromGallery
+              ? "Different color palette, a name on the tag, who it's for…"
+              : "Occasion, who it's for, colors you love, message for the tag…"
+          }
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
         />
       </div>
 
-      <InspirationUpload
-        urls={inspirationUrls}
-        setUrls={setInspirationUrls}
-        links={inspirationLinks}
-        setLinks={setInspirationLinks}
-      />
+      {/* Inspiration upload + style picker only appear when they're still browsing */}
+      {!cameFromGallery && (
+        <>
+          <InspirationUpload
+            urls={inspirationUrls}
+            setUrls={setInspirationUrls}
+            links={inspirationLinks}
+            setLinks={setInspirationLinks}
+          />
 
-      <StylePicker
-        variant={
-          bouquetId === "occasion"
-            ? "occasion"
-            : bouquetId === "just_because"
-              ? "just_because"
-              : "custom"
-        }
-      />
+          <StylePicker
+            variant={
+              bouquetId === "occasion"
+                ? "occasion"
+                : bouquetId === "just_because"
+                  ? "just_because"
+                  : "custom"
+            }
+          />
+        </>
+      )}
 
       <div className="rounded-2xl border border-blush-200 bg-white/70 p-5 text-sm text-ink-soft">
         <p className="serif text-lg text-ink">Next: pick a pickup time</p>
         <p className="mt-2">
           When you continue, your details are saved and a new tab opens to
           Petals by Dar&apos;s Square booking page. There you&apos;ll pick a
-          pickup time and pay the deposit. Your remainder is paid at pickup.
+          pickup time and pay{" "}
+          {cameFromGallery && paymentType === "full"
+            ? `${formatPrice(payNowCents)} in full — nothing owed at pickup.`
+            : `the ${formatPrice(payNowCents)} deposit. Your remainder is paid at pickup.`}
         </p>
       </div>
 
@@ -135,7 +255,11 @@ export default function DetailsForm() {
 
       <div className="flex justify-end">
         <button type="submit" disabled={submitting} className="btn-primary disabled:opacity-50">
-          {submitting ? "Saving…" : "Schedule pickup & pay deposit →"}
+          {submitting
+            ? "Saving…"
+            : cameFromGallery && paymentType === "full"
+              ? `Schedule pickup & pay ${formatPrice(payNowCents)} in full →`
+              : `Schedule pickup & pay ${formatPrice(payNowCents)} deposit →`}
         </button>
       </div>
     </form>

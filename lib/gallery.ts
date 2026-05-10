@@ -162,3 +162,11 @@ export function filenameToSlug(filename: string): string {
 export function formatPrice(cents: number): string {
   return `$${(cents / 100).toFixed(0)}`;
 }
+
+// Deposit for a gallery-priced bouquet: 40% of the photo price, rounded
+// to the nearest $5, with a $20 floor so very cheap photos still cover
+// materials. Used in both the order form UI and the /api/orders handler
+// so the customer sees the same number we save to the database.
+export function depositForCents(totalCents: number): number {
+  return Math.max(2000, Math.round((totalCents * 0.4) / 500) * 500);
+}

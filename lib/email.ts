@@ -30,7 +30,9 @@ export async function sendOwnerNotification(order: Order) {
     order.inspirationLinks.length ? `Links: ${order.inspirationLinks.join(", ")}` : "",
     order.inspirationUrls.length ? `Uploads: ${order.inspirationUrls.join(", ")}` : "",
     "",
-    `Suggested deposit: ${formatUSD(order.depositAmountCents)}`,
+    order.paymentType === "full"
+      ? `Wants to pay IN FULL today: ${formatUSD(order.totalAmountCents)} — nothing owed at pickup.`
+      : `Wants to pay deposit today: ${formatUSD(order.depositAmountCents)}. Remainder ${formatUSD(order.totalAmountCents - order.depositAmountCents)} due at pickup.`,
     `Estimated total: ${formatUSD(order.totalAmountCents)}`,
   ]
     .filter(Boolean)

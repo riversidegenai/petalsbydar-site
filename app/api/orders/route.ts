@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { orders } from "@/lib/schema";
 import { getBouquet } from "@/lib/bouquets";
-import { slugToPhoto } from "@/lib/gallery";
+import { slugToPhoto, depositForCents } from "@/lib/gallery";
 import { sendOwnerNotification } from "@/lib/email";
 
 export async function POST(req: Request) {
@@ -19,8 +19,10 @@ export async function POST(req: Request) {
   const stylePhoto = galleryStyle ? slugToPhoto(galleryStyle) : null;
   const totalCents = stylePhoto?.priceCents ?? bouquet.priceCents;
   const depositCents = stylePhoto
-    ? Math.max(2000, Math.round((totalCents * 0.4) / 500) * 500)
+    ? depositForCents(totalCents)
     : bouquet.depositCents;
+  const paymentType: "deposit" | "full" =
+    body.paymentType === "full" && stylePhoto ? "full" : "deposit";
 
   const [row] = await db
     .insert(orders)
@@ -36,6 +38,7 @@ export async function POST(req: Request) {
       galleryStyle,
       totalAmountCents: totalCents,
       depositAmountCents: depositCents,
+      paymentType,
       status: "pending_booking",
     })
     .returning();

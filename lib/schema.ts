@@ -18,6 +18,12 @@ export const orders = pgTable("orders", {
   galleryStyle: text("gallery_style"),
   totalAmountCents: integer("total_amount_cents").notNull().default(10000),
   depositAmountCents: integer("deposit_amount_cents").notNull().default(4000),
+  // What the customer said they want to pay at the Square booking step.
+  // "deposit" = pay deposit now, remainder at pickup.
+  // "full"    = pay the full amount now, nothing owed at pickup.
+  paymentType: text("payment_type", { enum: ["deposit", "full"] })
+    .notNull()
+    .default("deposit"),
   // pending_booking = customer submitted details; waiting for them to book in Square
   // booked         = matched to a Square appointment (manual confirmation by owner)
   // cancelled      = abandoned or cancelled
