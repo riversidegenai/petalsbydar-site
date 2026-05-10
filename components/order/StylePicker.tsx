@@ -3,15 +3,14 @@
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  GALLERY_PHOTOS,
+  getCustomPickerPhotos,
+  getJustBecausePhotos,
   getOccasionPhotos,
   filenameToSlug,
   formatPrice,
 } from "@/lib/gallery";
 
-const TOP_N = 12;
-
-type Variant = "custom" | "occasion";
+type Variant = "custom" | "just_because" | "occasion";
 
 export default function StylePicker({ variant = "custom" }: { variant?: Variant }) {
   const router = useRouter();
@@ -19,16 +18,24 @@ export default function StylePicker({ variant = "custom" }: { variant?: Variant 
   const currentStyle = params.get("style");
 
   const photos =
-    variant === "occasion" ? getOccasionPhotos() : GALLERY_PHOTOS.slice(0, TOP_N);
+    variant === "occasion"
+      ? getOccasionPhotos()
+      : variant === "just_because"
+        ? getJustBecausePhotos()
+        : getCustomPickerPhotos();
 
   const heading =
     variant === "occasion"
       ? "Like one of these occasion bouquets? (optional)"
-      : "Like one of these? (optional)";
+      : variant === "just_because"
+        ? "Like one of these just-because bouquets? (optional)"
+        : "Like one of these? (optional)";
   const subhead =
     variant === "occasion"
       ? "Tap one to start from that style — Dar can still customize colors and details to fit the occasion."
-      : "Tap a bouquet to start from that style — Dar can still customize colors and details to fit you.";
+      : variant === "just_because"
+        ? "Tap one to start from that style — Dar can still customize colors and details to fit the moment."
+        : "Tap a bouquet to start from that style — Dar can still customize colors and details to fit you.";
 
   function pick(file: string) {
     const slug = filenameToSlug(file);

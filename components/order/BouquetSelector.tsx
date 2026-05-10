@@ -26,10 +26,7 @@ export default function BouquetSelector() {
               onClick={() => setSelected(b.id)}
               className={`text-left transition ${active ? "card-pink-active" : "card-pink hover:border-blush-400"}`}
             >
-              <div className="flex items-baseline justify-between gap-2">
-                <h3 className="serif text-xl">{b.name}</h3>
-                <span className="serif text-xl">{formatUSD(b.priceCents)}</span>
-              </div>
+              <h3 className="serif text-xl">{b.name}</h3>
               <p className="mt-3 text-xs leading-relaxed text-ink-soft">{b.description}</p>
               <div className="mt-5 flex items-center justify-between">
                 <span className="pill">{formatUSD(b.depositCents)} deposit</span>

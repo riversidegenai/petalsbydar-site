@@ -7,19 +7,24 @@ export const orders = pgTable("orders", {
   phone: text("phone").notNull(),
   email: text("email").notNull(),
   instagram: text("instagram"),
-  pickupDate: date("pickup_date").notNull(),
-  pickupTime: text("pickup_time").notNull(),
+  // Pickup details now come from Square Appointments. Kept nullable so the
+  // owner can backfill them from the matched Square appointment if she wants
+  // (or for legacy rows from the Stripe era).
+  pickupDate: date("pickup_date"),
+  pickupTime: text("pickup_time"),
   notes: text("notes"),
   inspirationUrls: text("inspiration_urls").array().notNull().default([]),
   inspirationLinks: text("inspiration_links").array().notNull().default([]),
   galleryStyle: text("gallery_style"),
   totalAmountCents: integer("total_amount_cents").notNull().default(10000),
-  stripeSessionId: text("stripe_session_id"),
-  stripePaymentIntentId: text("stripe_payment_intent_id"),
   depositAmountCents: integer("deposit_amount_cents").notNull().default(4000),
-  status: text("status", { enum: ["draft", "paid", "cancelled"] }).notNull().default("draft"),
+  // pending_booking = customer submitted details; waiting for them to book in Square
+  // booked         = matched to a Square appointment (manual confirmation by owner)
+  // cancelled      = abandoned or cancelled
+  status: text("status", { enum: ["pending_booking", "booked", "cancelled"] })
+    .notNull()
+    .default("pending_booking"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  paidAt: timestamp("paid_at", { withTimezone: true }),
 });
 
 export type Order = typeof orders.$inferSelect;

@@ -68,6 +68,40 @@ export const GALLERY_PHOTOS: GalleryPhoto[] = [
   { file: "IMG_3165.jpg", priceCents: 8500 },
 ];
 
+// Custom-bouquet picker. The 12 photos shown in the Custom flow's
+// "Like one of these?" grid, in display order.
+export const CUSTOM_PICKER_FILES: string[] = [
+  "IMG_3159.jpg",
+  "IMG_3156.jpg",
+  "IMG_3147.jpg",
+  "IMG_3106.jpg",
+  "IMG_3131.jpg",
+  "IMG_3137.jpg",
+  "IMG_3138.jpg",
+  "IMG_3143.jpg",
+  "IMG_3146.jpg",
+  "IMG_3161.jpg",
+  "IMG_3166.jpg",
+  "IMG_3167.jpg",
+];
+
+// Just-Because-bouquet picker. The 12 photos shown in the Just-Because
+// flow's "Like one of these?" grid, in display order.
+export const JUST_BECAUSE_FILES: string[] = [
+  "IMG_3149.jpg",
+  "IMG_3150.jpg",
+  "IMG_3135.jpg",
+  "IMG_3134.jpg",
+  "IMG_3133.jpg",
+  "IMG_3132.jpg",
+  "IMG_3129.jpg",
+  "IMG_3126.jpg",
+  "IMG_3125.jpg",
+  "IMG_3124.jpg",
+  "IMG_3119.jpg",
+  "IMG_3107.jpg",
+];
+
 // Occasion-bouquet picker. These are filenames that already exist in
 // GALLERY_PHOTOS — listing them here pulls them into the Occasion flow's
 // "Like one of these?" picker. Update with the 12 occasion photos when ready.
@@ -86,10 +120,34 @@ export const OCCASION_FILES: string[] = [
   "IMG_3161.jpg",
 ];
 
+function photosFromFiles(files: string[]): GalleryPhoto[] {
+  return files
+    .map((file) => GALLERY_PHOTOS.find((p) => p.file === file))
+    .filter((p): p is GalleryPhoto => p !== undefined);
+}
+
+export function getCustomPickerPhotos(): GalleryPhoto[] {
+  return photosFromFiles(CUSTOM_PICKER_FILES);
+}
+
+export function getJustBecausePhotos(): GalleryPhoto[] {
+  return photosFromFiles(JUST_BECAUSE_FILES);
+}
+
 export function getOccasionPhotos(): GalleryPhoto[] {
-  return OCCASION_FILES.map((file) => GALLERY_PHOTOS.find((p) => p.file === file)).filter(
-    (p): p is GalleryPhoto => p !== undefined,
-  );
+  return photosFromFiles(OCCASION_FILES);
+}
+
+// Maps a gallery photo to the bouquet flow it belongs to. If a photo appears
+// in more than one list, the first match wins (custom → just_because → occasion).
+// Photos not in any curated list default to "custom".
+export type BouquetFlow = "custom" | "just_because" | "occasion";
+
+export function getBouquetFlowForFile(file: string): BouquetFlow {
+  if (CUSTOM_PICKER_FILES.includes(file)) return "custom";
+  if (JUST_BECAUSE_FILES.includes(file)) return "just_because";
+  if (OCCASION_FILES.includes(file)) return "occasion";
+  return "custom";
 }
 
 export function slugToPhoto(slug: string): GalleryPhoto | null {

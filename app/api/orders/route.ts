@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { orders } from "@/lib/schema";
 import { getBouquet } from "@/lib/bouquets";
 import { slugToPhoto } from "@/lib/gallery";
+import { sendOwnerNotification } from "@/lib/email";
 
 export async function POST(req: Request) {
   const body = await req.json();
@@ -10,7 +11,7 @@ export async function POST(req: Request) {
   if (!bouquet) {
     return NextResponse.json({ error: "Invalid bouquet type" }, { status: 400 });
   }
-  if (!body.customerName || !body.phone || !body.email || !body.pickupDate || !body.pickupTime) {
+  if (!body.customerName || !body.phone || !body.email) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
@@ -29,17 +30,19 @@ export async function POST(req: Request) {
       phone: body.phone,
       email: body.email,
       instagram: body.instagram ?? null,
-      pickupDate: body.pickupDate,
-      pickupTime: body.pickupTime,
       notes: body.notes ?? null,
       inspirationUrls: body.inspirationUrls ?? [],
       inspirationLinks: body.inspirationLinks ?? [],
       galleryStyle,
       totalAmountCents: totalCents,
       depositAmountCents: depositCents,
-      status: "draft",
+      status: "pending_booking",
     })
-    .returning({ id: orders.id });
+    .returning();
+
+  // Notify the owner so she can match this submission with the Square
+  // appointment that comes in next. No-op without RESEND_API_KEY.
+  void sendOwnerNotification(row).catch(() => {});
 
   return NextResponse.json({ id: row.id });
 }

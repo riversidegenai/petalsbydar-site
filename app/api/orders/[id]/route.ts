@@ -16,5 +16,6 @@ export async function GET(
     totalAmountCents: order.totalAmountCents,
     depositAmountCents: order.depositAmountCents,
     galleryStyle: order.galleryStyle,
+    status: order.status,
   });
 }

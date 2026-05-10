@@ -28,10 +28,7 @@ export default function Bouquets() {
               pressed === b.id ? "card-pink-active" : "card-pink"
             }`}
           >
-            <div className="flex items-baseline justify-between gap-4">
-              <h3 className="serif text-2xl">{b.name}</h3>
-              <span className="serif text-2xl">{formatUSD(b.priceCents)}</span>
-            </div>
+            <h3 className="serif text-2xl">{b.name}</h3>
             <p className="mt-3 text-sm leading-relaxed text-ink-soft">{b.description}</p>
             <div className="mt-6 flex items-center justify-between">
               <span className="pill">{formatUSD(b.depositCents)} deposit</span>

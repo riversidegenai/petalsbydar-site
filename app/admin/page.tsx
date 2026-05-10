@@ -49,7 +49,7 @@ export default async function AdminPage() {
               <th className="px-4 py-3">When</th>
               <th className="px-4 py-3">Bouquet</th>
               <th className="px-4 py-3">Customer</th>
-              <th className="px-4 py-3">Pickup</th>
+              <th className="px-4 py-3">Style / Notes</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Deposit</th>
             </tr>
@@ -68,10 +68,15 @@ export default async function AdminPage() {
                     <div className="text-xs text-blush-700">{r.phone} · {r.email}</div>
                   </td>
                   <td className="px-4 py-3 text-xs">
-                    {r.pickupDate} · {r.pickupTime}
+                    {r.galleryStyle && (
+                      <div className="text-blush-800">{r.galleryStyle}</div>
+                    )}
+                    {r.notes && (
+                      <div className="mt-1 max-w-xs text-ink-soft">{r.notes}</div>
+                    )}
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`pill ${r.status === "paid" ? "bg-green-50 border-green-200 text-green-800" : ""}`}>
+                    <span className={`pill ${r.status === "booked" ? "bg-green-50 border-green-200 text-green-800" : ""}`}>
                       {r.status}
                     </span>
                   </td>

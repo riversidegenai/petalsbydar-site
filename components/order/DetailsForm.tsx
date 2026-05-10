@@ -2,15 +2,14 @@
 
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { getBouquet, formatUSD } from "@/lib/bouquets";
-import DateChips from "./DateChips";
-import TimeChips from "./TimeChips";
+import { squareBookingUrl } from "@/lib/square";
 import InspirationUpload from "./InspirationUpload";
+import StylePicker from "./StylePicker";
 
 export default function DetailsForm() {
   const params = useSearchParams();
-  const router = useRouter();
   const bouquetId = params.get("bouquet") || "custom";
   const styleSlug = params.get("style");
   const bouquet = getBouquet(bouquetId);
@@ -19,8 +18,6 @@ export default function DetailsForm() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [instagram, setInstagram] = useState("");
-  const [pickupDate, setPickupDate] = useState<string | null>(null);
-  const [pickupTime, setPickupTime] = useState<string | null>(null);
   const [notes, setNotes] = useState(
     styleSlug ? `Inspired by gallery photo: ${styleSlug}` : "",
   );
@@ -36,8 +33,6 @@ export default function DetailsForm() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!pickupDate) return setErr("Pick a pickup date.");
-    if (!pickupTime) return setErr("Pick a pickup time.");
     if (!name || !phone || !email) return setErr("Name, phone, and email are required.");
 
     setSubmitting(true);
@@ -52,18 +47,17 @@ export default function DetailsForm() {
           phone,
           email,
           instagram: instagram || null,
-          pickupDate,
-          pickupTime,
           notes: notes || null,
           inspirationUrls,
           inspirationLinks,
+          galleryStyle: styleSlug || null,
         }),
       });
       if (!res.ok) throw new Error(await res.text());
-      const { id } = (await res.json()) as { id: string };
-      router.push(`/order/deposit?orderId=${id}`);
+      window.open(squareBookingUrl(), "_blank", "noopener,noreferrer");
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Something went wrong");
+    } finally {
       setSubmitting(false);
     }
   }
@@ -76,8 +70,9 @@ export default function DetailsForm() {
           <p className="serif mt-1 text-2xl">{bouquet!.name}</p>
         </div>
         <div className="text-right">
-          <p className="serif text-2xl">{formatUSD(bouquet!.priceCents)}</p>
-          <p className="text-xs text-blush-700">{formatUSD(bouquet!.depositCents)} deposit</p>
+          <p className="text-xs text-blush-700">Deposit secures pickup</p>
+          <p className="serif text-2xl">{formatUSD(bouquet!.depositCents)}</p>
+          <p className="text-xs text-blush-700">Remainder due at pickup</p>
         </div>
       </div>
 
@@ -101,16 +96,6 @@ export default function DetailsForm() {
       </div>
 
       <div>
-        <p className="label mb-3">Pickup or delivery date</p>
-        <DateChips value={pickupDate} onChange={setPickupDate} />
-      </div>
-
-      <div>
-        <p className="label mb-3">Pickup time</p>
-        <TimeChips value={pickupTime} onChange={setPickupTime} />
-      </div>
-
-      <div>
         <label className="label">Tell us about the bouquet</label>
         <textarea
           className="input min-h-[90px]"
@@ -127,11 +112,30 @@ export default function DetailsForm() {
         setLinks={setInspirationLinks}
       />
 
+      <StylePicker
+        variant={
+          bouquetId === "occasion"
+            ? "occasion"
+            : bouquetId === "just_because"
+              ? "just_because"
+              : "custom"
+        }
+      />
+
+      <div className="rounded-2xl border border-blush-200 bg-white/70 p-5 text-sm text-ink-soft">
+        <p className="serif text-lg text-ink">Next: pick a pickup time</p>
+        <p className="mt-2">
+          When you continue, your details are saved and a new tab opens to
+          Petals by Dar&apos;s Square booking page. There you&apos;ll pick a
+          pickup time and pay the deposit. Your remainder is paid at pickup.
+        </p>
+      </div>
+
       {err && <p className="text-sm text-red-600">{err}</p>}
 
       <div className="flex justify-end">
         <button type="submit" disabled={submitting} className="btn-primary disabled:opacity-50">
-          {submitting ? "Saving…" : "Continue to deposit →"}
+          {submitting ? "Saving…" : "Schedule pickup & pay deposit →"}
         </button>
       </div>
     </form>

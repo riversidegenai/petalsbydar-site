@@ -1,9 +1,9 @@
-type Step = "service" | "details" | "deposit";
+type Step = "service" | "details" | "booking";
 
 const STEPS: { id: Step; label: string }[] = [
   { id: "service", label: "Service" },
   { id: "details", label: "Details" },
-  { id: "deposit", label: "Deposit" },
+  { id: "booking", label: "Booking" },
 ];
 
 export default function Stepper({ current }: { current: Step }) {

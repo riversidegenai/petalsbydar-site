@@ -6,6 +6,7 @@ import {
   slugToPhoto,
   filenameToSlug,
   formatPrice,
+  getBouquetFlowForFile,
 } from "@/lib/gallery";
 
 export function generateStaticParams() {
@@ -20,6 +21,8 @@ export default async function GalleryPhotoPage({
   const { slug } = await params;
   const photo = slugToPhoto(slug);
   if (!photo) notFound();
+
+  const bouquetFlow = getBouquetFlowForFile(photo.file);
 
   return (
     <section className="mx-auto max-w-5xl px-6 py-12 md:py-20">
@@ -66,7 +69,7 @@ export default async function GalleryPhotoPage({
 
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
-              href={`/order/details?bouquet=custom&style=${slug}`}
+              href={`/order/details?bouquet=${bouquetFlow}&style=${slug}`}
               className="btn-primary"
             >
               Order this style →
