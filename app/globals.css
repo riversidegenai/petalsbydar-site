@@ -1,0 +1,132 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #ffe1ea;
+  --bg-soft: #ffd0dc;
+  --ink: #2a0d18;
+  --ink-soft: #6c4453;
+  --accent: #e11d48;
+  --accent-strong: #be123c;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+body {
+  background:
+    radial-gradient(70% 60% at 90% 0%, #ffb8cc 0%, transparent 65%),
+    radial-gradient(60% 50% at 0% 50%, #ffc6d6 0%, transparent 65%),
+    radial-gradient(55% 45% at 100% 100%, #ffbed0 0%, transparent 65%),
+    var(--bg);
+  min-height: 100vh;
+}
+
+.serif {
+  font-family: var(--font-serif), Georgia, serif;
+  font-feature-settings: "ss01", "ss02";
+}
+
+.italic-accent {
+  font-style: italic;
+  font-weight: 400;
+  color: var(--accent);
+}
+
+.btn-primary {
+  @apply inline-flex items-center justify-center rounded-full bg-blush-700 px-6 py-3 text-sm font-medium text-white shadow-glow transition hover:bg-blush-800;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center rounded-full border border-blush-300 bg-white/70 px-6 py-3 text-sm font-medium text-blush-800 backdrop-blur transition hover:bg-white;
+}
+
+.pill {
+  @apply inline-flex items-center gap-1.5 rounded-full border border-blush-200 bg-white/80 px-3 py-1 text-xs font-medium text-blush-800;
+}
+
+.card {
+  @apply rounded-3xl border border-blush-200 bg-white/70 p-6 shadow-card backdrop-blur;
+}
+
+.card-pink {
+  @apply rounded-3xl border border-blush-300 bg-gradient-to-br from-blush-100 to-white p-6 shadow-card;
+}
+
+.card-pink-active {
+  @apply rounded-3xl border-2 border-blush-500 bg-gradient-to-br from-blush-200/70 to-blush-100/30 p-6 shadow-glow;
+}
+
+.chip {
+  @apply inline-flex shrink-0 items-center justify-center rounded-full border border-blush-200 bg-white px-4 py-2 text-sm text-blush-900 transition hover:border-blush-400;
+}
+
+.chip-active {
+  @apply inline-flex shrink-0 items-center justify-center rounded-full border-2 border-blush-600 bg-blush-50 px-4 py-2 text-sm font-medium text-blush-900 shadow-card;
+}
+
+.input {
+  @apply mt-1 w-full rounded-xl border border-blush-200 bg-white/80 px-3 py-2.5 text-sm text-ink shadow-sm outline-none transition placeholder:text-blush-300 focus:border-blush-500 focus:ring-2 focus:ring-blush-200;
+}
+
+.label {
+  @apply block text-[11px] font-semibold uppercase tracking-[0.14em] text-blush-700;
+}
+
+@keyframes marquee {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
+}
+
+.marquee-track {
+  animation: marquee 38s linear infinite;
+  will-change: transform;
+  backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
+}
+
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes petal-float {
+  0% {
+    transform: translate3d(0, 110%, 0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: var(--opacity, 0.5);
+  }
+  90% {
+    opacity: var(--opacity, 0.5);
+  }
+  100% {
+    transform: translate3d(var(--drift, 0px), -10vh, 0) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.petal {
+  position: absolute;
+  bottom: 0;
+  width: var(--size, 18px);
+  height: var(--size, 18px);
+  color: var(--hue, #f8b6c5);
+  opacity: 0;
+  will-change: transform, opacity;
+  animation-name: petal-float;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .petal {
+    animation: none;
+    display: none;
+  }
+}
