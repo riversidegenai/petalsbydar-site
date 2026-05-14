@@ -29,6 +29,13 @@
       "when": 1778453574868,
       "tag": "0003_living_moonstone",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1778801233802,
+      "tag": "0004_cute_silver_centurion",
+      "breakpoints": true
     }
   ]
 }

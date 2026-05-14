@@ -18,18 +18,29 @@ export const orders = pgTable("orders", {
   galleryStyle: text("gallery_style"),
   totalAmountCents: integer("total_amount_cents").notNull().default(10000),
   depositAmountCents: integer("deposit_amount_cents").notNull().default(4000),
-  // What the customer said they want to pay at the Square booking step.
+  // What the customer chose to pay on the website checkout step.
   // "deposit" = pay deposit now, remainder at pickup.
   // "full"    = pay the full amount now, nothing owed at pickup.
   paymentType: text("payment_type", { enum: ["deposit", "full"] })
     .notNull()
     .default("deposit"),
-  // pending_booking = customer submitted details; waiting for them to book in Square
-  // booked         = matched to a Square appointment (manual confirmation by owner)
-  // cancelled      = abandoned or cancelled
-  status: text("status", { enum: ["pending_booking", "booked", "cancelled"] })
+  // pending_payment = details saved, awaiting Square Web Payments charge
+  // paid            = Square charged the card successfully
+  // pending_booking = paid + customer should now book pickup time on Square Appointments
+  // booked          = matched to a Square appointment (owner confirms manually)
+  // cancelled       = abandoned or cancelled
+  status: text("status", {
+    enum: ["pending_payment", "paid", "pending_booking", "booked", "cancelled"],
+  })
     .notNull()
-    .default("pending_booking"),
+    .default("pending_payment"),
+  // Square Payment ID returned by paymentsApi.createPayment(). Used to
+  // reconcile the order with the webhook event and as a receipt reference.
+  squarePaymentId: text("square_payment_id"),
+  // Cents actually captured by Square (may differ from totalAmountCents if
+  // they chose deposit, or from depositAmountCents if they chose full).
+  amountPaidCents: integer("amount_paid_cents"),
+  paidAt: timestamp("paid_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

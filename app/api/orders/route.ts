@@ -39,7 +39,7 @@ export async function POST(req: Request) {
       totalAmountCents: totalCents,
       depositAmountCents: depositCents,
       paymentType,
-      status: "pending_booking",
+      status: "pending_payment",
     })
     .returning();
 
