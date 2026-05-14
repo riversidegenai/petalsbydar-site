@@ -1,4 +1,3 @@
-import { headers } from "next/headers";
 import { desc } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { orders } from "@/lib/schema";
@@ -6,33 +5,14 @@ import { getBouquet, formatUSD } from "@/lib/bouquets";
 
 export const dynamic = "force-dynamic";
 
-function unauthorized() {
-  return new Response("Authentication required", {
-    status: 401,
-    headers: { "WWW-Authenticate": 'Basic realm="Petals admin"' },
-  });
-}
-
 export default async function AdminPage() {
-  const adminPassword = process.env.ADMIN_PASSWORD;
-  if (!adminPassword) {
+  if (!process.env.ADMIN_PASSWORD) {
     return (
       <section className="mx-auto max-w-2xl px-6 py-20 text-center">
         <h1 className="serif text-3xl">Admin not configured</h1>
         <p className="mt-3 text-sm text-ink-soft">Set ADMIN_PASSWORD in your environment.</p>
       </section>
     );
-  }
-
-  const h = await headers();
-  const auth = h.get("authorization");
-  if (!auth?.startsWith("Basic ")) {
-    return unauthorized() as unknown as JSX.Element;
-  }
-  const decoded = Buffer.from(auth.slice(6), "base64").toString();
-  const [, pass] = decoded.split(":");
-  if (pass !== adminPassword) {
-    return unauthorized() as unknown as JSX.Element;
   }
 
   const rows = await db.select().from(orders).orderBy(desc(orders.createdAt)).limit(50);

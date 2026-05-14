@@ -64,7 +64,10 @@ export default function DetailsForm() {
           paymentType,
         }),
       });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error ?? "Could not save your order. Please try again.");
+      }
       window.open(squareBookingUrl(), "_blank", "noopener,noreferrer");
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Something went wrong");

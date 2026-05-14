@@ -29,7 +29,10 @@ export default function InspirationUpload({
           method: "POST",
           body: file,
         });
-        if (!res.ok) throw new Error(await res.text());
+        if (!res.ok) {
+          const errData = await res.json().catch(() => null);
+          throw new Error(errData?.error ?? "Upload failed. Please try again.");
+        }
         const data = (await res.json()) as { url: string };
         newUrls.push(data.url);
       }
@@ -58,7 +61,7 @@ export default function InspirationUpload({
       </div>
 
       <label className="flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-dashed border-blush-300 bg-blush-50/40 px-4 py-3 text-sm hover:bg-blush-50">
-        <span>📎 Add photos / video</span>
+        <span>Add photos / video</span>
         <span className="text-xs text-blush-700">or paste a link below</span>
         <input
           type="file"
@@ -73,7 +76,7 @@ export default function InspirationUpload({
       {urls.length > 0 && (
         <ul className="text-xs text-blush-800">
           {urls.map((u) => (
-            <li key={u}>📎 {u.split("/").pop()}</li>
+            <li key={u}>{u.split("/").pop()}</li>
           ))}
         </ul>
       )}

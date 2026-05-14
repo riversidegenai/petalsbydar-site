@@ -45,7 +45,9 @@ export async function POST(req: Request) {
 
   // Notify the owner so she can match this submission with the Square
   // appointment that comes in next. No-op without RESEND_API_KEY.
-  void sendOwnerNotification(row).catch(() => {});
+  void sendOwnerNotification(row).catch((err) => {
+    console.error("sendOwnerNotification failed for order", row.id, err);
+  });
 
   return NextResponse.json({ id: row.id });
 }
