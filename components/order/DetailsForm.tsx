@@ -4,14 +4,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { getBouquet } from "@/lib/bouquets";
 import { slugToPhoto, depositForCents, formatPrice } from "@/lib/gallery";
-import { squareBookingUrl } from "@/lib/square";
 import InspirationUpload from "./InspirationUpload";
 import StylePicker from "./StylePicker";
 
 export default function DetailsForm() {
+  const router = useRouter();
   const params = useSearchParams();
   const bouquetId = params.get("bouquet") || "custom";
   const styleSlug = params.get("style");
@@ -68,7 +68,8 @@ export default function DetailsForm() {
         const data = await res.json().catch(() => null);
         throw new Error(data?.error ?? "Could not save your order. Please try again.");
       }
-      window.open(squareBookingUrl(), "_blank", "noopener,noreferrer");
+      const data = (await res.json()) as { id: string };
+      router.push(`/order/payment?orderId=${data.id}`);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Something went wrong");
     } finally {
@@ -243,14 +244,14 @@ export default function DetailsForm() {
       )}
 
       <div className="rounded-2xl border border-blush-200 bg-white/70 p-5 text-sm text-ink-soft">
-        <p className="serif text-lg text-ink">Next: pick a pickup time</p>
+        <p className="serif text-lg text-ink">Next: payment, then pickup time</p>
         <p className="mt-2">
-          When you continue, your details are saved and a new tab opens to
-          Petals by Dar&apos;s Square booking page. There you&apos;ll pick a
-          pickup time and pay{" "}
+          When you continue, your details are saved and you&apos;ll enter your
+          card on the next page to pay{" "}
           {cameFromGallery && paymentType === "full"
             ? `${formatPrice(payNowCents)} in full — nothing owed at pickup.`
-            : `the ${formatPrice(payNowCents)} deposit. Your remainder is paid at pickup.`}
+            : `the ${formatPrice(payNowCents)} deposit. Your remainder is paid at pickup.`}{" "}
+          After payment, you&apos;ll be sent to Square to pick a pickup time.
         </p>
       </div>
 
@@ -261,8 +262,8 @@ export default function DetailsForm() {
           {submitting
             ? "Saving…"
             : cameFromGallery && paymentType === "full"
-              ? `Schedule pickup & pay ${formatPrice(payNowCents)} in full →`
-              : `Schedule pickup & pay ${formatPrice(payNowCents)} deposit →`}
+              ? `Continue to payment — ${formatPrice(payNowCents)} →`
+              : `Continue to payment — ${formatPrice(payNowCents)} deposit →`}
         </button>
       </div>
     </form>

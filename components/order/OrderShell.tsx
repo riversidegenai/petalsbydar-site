@@ -1,6 +1,6 @@
 import Stepper from "./Stepper";
 
-type Step = "service" | "details" | "booking";
+type Step = "service" | "details" | "payment" | "booking";
 
 export default function OrderShell({
   step,

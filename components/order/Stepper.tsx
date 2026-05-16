@@ -1,8 +1,9 @@
-type Step = "service" | "details" | "booking";
+type Step = "service" | "details" | "payment" | "booking";
 
 const STEPS: { id: Step; label: string }[] = [
   { id: "service", label: "Service" },
   { id: "details", label: "Details" },
+  { id: "payment", label: "Payment" },
   { id: "booking", label: "Booking" },
 ];
 

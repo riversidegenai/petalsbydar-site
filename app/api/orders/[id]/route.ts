@@ -13,8 +13,10 @@ export async function GET(
     return NextResponse.json({ error: "Order not found" }, { status: 404 });
   }
   return NextResponse.json({
+    customerName: order.customerName,
     totalAmountCents: order.totalAmountCents,
     depositAmountCents: order.depositAmountCents,
+    paymentType: order.paymentType,
     galleryStyle: order.galleryStyle,
     status: order.status,
   });
