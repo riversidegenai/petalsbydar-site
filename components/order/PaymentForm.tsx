@@ -1,10 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import { payments, type Card, type Payments } from "@square/web-sdk";
+import {
+  payments,
+  type ApplePay,
+  type Card,
+  type CashAppPay,
+  type Payments,
+  type PaymentRequest,
+} from "@square/web-sdk";
 import { formatPrice } from "@/lib/gallery";
-import { squareBookingUrl } from "@/lib/square";
+import AcceptedCardsRow from "./AcceptedCardsRow";
 
 type OrderSummary = {
   id: string;
@@ -17,8 +23,9 @@ type OrderSummary = {
 };
 
 export default function PaymentForm({ orderId }: { orderId: string }) {
-  const router = useRouter();
   const cardContainerRef = useRef<HTMLDivElement | null>(null);
+  const applePayButtonRef = useRef<HTMLDivElement | null>(null);
+  const cashAppButtonRef = useRef<HTMLDivElement | null>(null);
 
   const [order, setOrder] = useState<OrderSummary | null>(null);
   const [orderError, setOrderError] = useState<string | null>(null);
@@ -47,8 +54,10 @@ export default function PaymentForm({ orderId }: { orderId: string }) {
     };
   }, [orderId]);
 
-  // Initialize Square Web Payments SDK once.
+  // Initialize Square Web Payments SDK once we have the order amount.
   useEffect(() => {
+    if (!order) return;
+
     const appId = process.env.NEXT_PUBLIC_SQUARE_APPLICATION_ID;
     const locationId = process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID;
     if (!appId || !locationId) {
@@ -58,19 +67,75 @@ export default function PaymentForm({ orderId }: { orderId: string }) {
       return;
     }
 
+    const amountCents =
+      order.paymentType === "full" ? order.totalAmountCents : order.depositAmountCents;
+    const amountDollars = (amountCents / 100).toFixed(2);
+
     let attachedCard: Card | null = null;
+    let attachedApplePay: ApplePay | null = null;
+    let attachedCashApp: CashAppPay | null = null;
     let cancelled = false;
 
     (async () => {
       try {
         const paymentsInstance: Payments | null = await payments(appId, locationId);
         if (!paymentsInstance) throw new Error("Square Web Payments SDK failed to load.");
+
+        // --- Card ---
         const newCard = await paymentsInstance.card();
         if (cancelled) return;
-        if (!cardContainerRef.current) return;
-        await newCard.attach(cardContainerRef.current);
-        attachedCard = newCard;
-        setCard(newCard);
+        if (cardContainerRef.current) {
+          await newCard.attach(cardContainerRef.current);
+          attachedCard = newCard;
+          setCard(newCard);
+        }
+
+        // Build one shared payment request for all wallets.
+        const buildRequest = (): PaymentRequest =>
+          paymentsInstance.paymentRequest({
+            countryCode: "US",
+            currencyCode: "USD",
+            total: { amount: amountDollars, label: "Petals by Dar" },
+          });
+
+        // --- Apple Pay (Safari + verified domain only) ---
+        try {
+          const applePay = await paymentsInstance.applePay(buildRequest());
+          if (cancelled) return;
+          if (applePayButtonRef.current) {
+            attachedApplePay = applePay;
+            applePayButtonRef.current.addEventListener("click", async () => {
+              await handleWalletTokenize(applePay, "Apple Pay");
+            });
+            applePayButtonRef.current.dataset.ready = "true";
+          }
+        } catch {
+          // Apple Pay unavailable — hide the button silently.
+        }
+
+        // --- Cash App Pay ---
+        try {
+          const cashAppPay = await paymentsInstance.cashAppPay(buildRequest(), {
+            redirectURL: window.location.href,
+            referenceId: orderId,
+          });
+          if (cancelled) return;
+          if (cashAppButtonRef.current) {
+            await cashAppPay.attach(cashAppButtonRef.current);
+            attachedCashApp = cashAppPay;
+            cashAppPay.addEventListener("ontokenization", async (event) => {
+              const detail = (event as CustomEvent<{ tokenResult: { status: string; token?: string } }>).detail;
+              const tokenResult = detail?.tokenResult;
+              if (tokenResult?.status === "OK" && tokenResult.token) {
+                await chargeServer(tokenResult.token, "Cash App Pay");
+              }
+            });
+            cashAppButtonRef.current.dataset.ready = "true";
+          }
+        } catch {
+          // Cash App Pay unavailable.
+        }
+
         setSdkReady(true);
       } catch (e) {
         if (!cancelled) {
@@ -85,14 +150,62 @@ export default function PaymentForm({ orderId }: { orderId: string }) {
 
     return () => {
       cancelled = true;
-      if (attachedCard) {
-        attachedCard.destroy().catch(() => {});
-      }
+      attachedCard?.destroy().catch(() => {});
+      attachedApplePay?.destroy().catch(() => {});
+      attachedCashApp?.destroy().catch(() => {});
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [order]);
 
-  async function onPay() {
-    if (!card || !order) return;
+  async function handleWalletTokenize(
+    wallet: ApplePay,
+    label: string,
+  ) {
+    setSubmitting(true);
+    setPayError(null);
+    try {
+      const result = await wallet.tokenize();
+      if (result.status !== "OK" || !result.token) {
+        const firstError =
+          "errors" in result && result.errors && result.errors.length > 0
+            ? result.errors[0]
+            : null;
+        const message =
+          firstError && "message" in firstError
+            ? firstError.message
+            : `${label} was cancelled or failed.`;
+        throw new Error(message);
+      }
+      await chargeServer(result.token, label);
+    } catch (e) {
+      setPayError(e instanceof Error ? e.message : `${label} failed.`);
+      setSubmitting(false);
+    }
+  }
+
+  async function chargeServer(sourceId: string, _method: string) {
+    if (!order) return;
+    setSubmitting(true);
+    setPayError(null);
+    try {
+      const res = await fetch("/api/payments", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ orderId: order.id, sourceId }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.error ?? "Payment could not be processed.");
+      }
+      window.location.href = `/order/booking?orderId=${order.id}`;
+    } catch (e) {
+      setPayError(e instanceof Error ? e.message : "Payment failed.");
+      setSubmitting(false);
+    }
+  }
+
+  async function onPayCard() {
+    if (!card) return;
     setSubmitting(true);
     setPayError(null);
     try {
@@ -108,19 +221,7 @@ export default function PaymentForm({ orderId }: { orderId: string }) {
             : "Card could not be verified.";
         throw new Error(message);
       }
-
-      const res = await fetch("/api/payments", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ orderId: order.id, sourceId: result.token }),
-      });
-      const data = await res.json().catch(() => null);
-      if (!res.ok) {
-        throw new Error(data?.error ?? "Payment could not be processed.");
-      }
-
-      // Hand off to Square Appointments for pickup-time selection.
-      window.location.href = `/order/booking?orderId=${order.id}`;
+      await chargeServer(result.token, "Card");
     } catch (e) {
       setPayError(e instanceof Error ? e.message : "Payment failed.");
       setSubmitting(false);
@@ -141,46 +242,79 @@ export default function PaymentForm({ orderId }: { orderId: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="card-pink">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-blush-700">
-          {order.paymentType === "full" ? "Paying in full" : "Paying deposit"}
-        </p>
-        <p className="serif mt-1 text-3xl">{formatPrice(amountCents)}</p>
+      {/* Order summary band */}
+      <div className="card-pink flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-blush-700">
+            {order.paymentType === "full" ? "Paying in full" : "Paying deposit"}
+          </p>
+          <p className="serif mt-1 text-3xl">{formatPrice(amountCents)}</p>
+        </div>
         {remainderCents > 0 && (
-          <p className="mt-1 text-xs text-blush-700">
-            {formatPrice(remainderCents)} remainder at pickup
+          <p className="text-xs text-blush-700">
+            <span className="serif text-base">{formatPrice(remainderCents)}</span>{" "}
+            remainder at pickup
           </p>
         )}
       </div>
 
-      <div className="rounded-2xl border border-blush-200 bg-white/70 p-5">
-        <p className="label">Card details</p>
+      {/* Unified payment card */}
+      <div className="rounded-3xl border border-blush-200 bg-white/70 p-6 shadow-card backdrop-blur">
         {sdkError ? (
-          <p className="text-sm text-red-600">{sdkError}</p>
+          <p className="text-sm text-red-700">{sdkError}</p>
         ) : (
-          <div ref={cardContainerRef} className="mt-2 min-h-[60px]" />
+          <div className="space-y-5">
+            {/* Wallets — each constrained to the same width/height for alignment.
+                Square renders the official branded button inside; we just give
+                them a consistent shell. */}
+            <div className="space-y-2.5">
+              <div
+                ref={applePayButtonRef}
+                id="apple-pay-button"
+                className="apple-pay-button mx-auto h-12 w-full max-w-sm overflow-hidden rounded-xl"
+              />
+              <div
+                ref={cashAppButtonRef}
+                id="cash-app-pay-button"
+                className="mx-auto h-12 w-full max-w-sm overflow-hidden rounded-xl [&>div]:!h-full [&>div]:!w-full [&_button]:!h-full [&_button]:!w-full"
+              />
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className="h-px flex-1 bg-blush-200" />
+              <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-blush-700">
+                Or pay with card
+              </span>
+              <span className="h-px flex-1 bg-blush-200" />
+            </div>
+
+            <div>
+              <p className="label">Card details</p>
+              <div
+                ref={cardContainerRef}
+                className="mt-2 min-h-[60px] rounded-xl border border-blush-200 bg-white px-3 py-2"
+              />
+            </div>
+
+            {payError && <p className="text-sm text-red-600">{payError}</p>}
+
+            <button
+              type="button"
+              onClick={onPayCard}
+              disabled={!sdkReady || submitting}
+              className="btn-primary w-full disabled:opacity-50"
+            >
+              {submitting ? "Processing…" : `Pay ${formatPrice(amountCents)} →`}
+            </button>
+
+            <AcceptedCardsRow />
+          </div>
         )}
       </div>
 
-      {payError && <p className="text-sm text-red-600">{payError}</p>}
-
-      <div className="flex justify-end">
-        <button
-          type="button"
-          onClick={onPay}
-          disabled={!sdkReady || submitting}
-          className="btn-primary disabled:opacity-50"
-        >
-          {submitting
-            ? "Processing…"
-            : `Pay ${formatPrice(amountCents)} →`}
-        </button>
-      </div>
-
-      <p className="text-[11px] text-ink-soft">
+      <p className="text-center text-[11px] text-ink-soft">
         After payment, you&apos;ll be sent to Square Appointments to pick your
-        pickup time. Booking URL:{" "}
-        <span className="break-all">{squareBookingUrl()}</span>
+        pickup time.
       </p>
     </div>
   );
