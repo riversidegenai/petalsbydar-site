@@ -267,17 +267,13 @@ export default function PaymentForm({ orderId }: { orderId: string }) {
             {/* Wallets — each constrained to the same width/height for alignment.
                 Square renders the official branded button inside; we just give
                 them a consistent shell. */}
-            <div className="space-y-2.5">
+            <div className="mx-auto w-full max-w-sm space-y-2.5">
               <div
                 ref={applePayButtonRef}
                 id="apple-pay-button"
-                className="apple-pay-button mx-auto h-12 w-full max-w-sm overflow-hidden rounded-xl"
+                className="apple-pay-button h-12 w-full"
               />
-              <div
-                ref={cashAppButtonRef}
-                id="cash-app-pay-button"
-                className="mx-auto h-12 w-full max-w-sm overflow-hidden rounded-xl [&>div]:!h-full [&>div]:!w-full [&_button]:!h-full [&_button]:!w-full"
-              />
+              <div ref={cashAppButtonRef} id="cash-app-pay-button" />
             </div>
 
             <div className="flex items-center gap-3">

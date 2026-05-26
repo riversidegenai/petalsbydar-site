@@ -2,6 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Apple Pay button — uses Apple's official CSS to draw the black "🍎 Pay"
+   button. Square's SDK looks for this class and toggles visibility based on
+   browser support. Without these styles, the container renders empty. */
+.apple-pay-button {
+  -webkit-appearance: -apple-pay-button;
+  -apple-pay-button-type: pay;
+  -apple-pay-button-style: black;
+  border-radius: 12px;
+  cursor: pointer;
+}
+@supports not (-webkit-appearance: -apple-pay-button) {
+  .apple-pay-button {
+    display: none;
+  }
+}
+
 :root {
   --bg: #ffe1ea;
   --bg-soft: #ffd0dc;
