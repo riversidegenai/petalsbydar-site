@@ -12,7 +12,8 @@ import type { NextConfig } from "next";
 const csp = [
   "default-src 'self'",
   // Square SDK is loaded from squarecdn; 'unsafe-eval' is required by the SDK.
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.squarecdn.com https://*.squareup.com https://js.squareup.com",
+  // Square SDK + Cloudflare Web Analytics beacon (cloudflareinsights).
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.squarecdn.com https://*.squareup.com https://js.squareup.com https://static.cloudflareinsights.com",
   // Square injects inline styles into its iframes.
   "style-src 'self' 'unsafe-inline' https://*.squarecdn.com",
   // CashSans + Square fonts, incl. the cloudfront mirror Square documents.

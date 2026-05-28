@@ -109,8 +109,10 @@ export default function PaymentForm({ orderId }: { orderId: string }) {
             });
             applePayButtonRef.current.dataset.ready = "true";
           }
-        } catch {
-          // Apple Pay unavailable — hide the button silently.
+        } catch (err) {
+          // Apple Pay unavailable (unsupported browser/device, or init threw).
+          // Log so we can tell "correctly hidden" from "broke unexpectedly".
+          console.error("[PaymentForm] Apple Pay init failed:", err);
         }
 
         // --- Cash App Pay ---
@@ -132,8 +134,10 @@ export default function PaymentForm({ orderId }: { orderId: string }) {
             });
             cashAppButtonRef.current.dataset.ready = "true";
           }
-        } catch {
-          // Cash App Pay unavailable.
+        } catch (err) {
+          // Cash App Pay unavailable — log so a failing init/attach is visible
+          // in the browser console instead of silently hiding the button.
+          console.error("[PaymentForm] Cash App Pay init/attach failed:", err);
         }
 
         setSdkReady(true);
