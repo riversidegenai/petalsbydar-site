@@ -24,16 +24,17 @@ export default function Bouquets() {
             key={b.id}
             href={`/order/details?bouquet=${b.id}`}
             onClick={() => setPressed(b.id)}
-            className={`block transition hover:shadow-glow ${
+            className={`group block transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-glow ${
               pressed === b.id ? "card-pink-active" : "card-pink"
             }`}
           >
-            <h3 className="serif text-2xl">{b.name}</h3>
+            <h3 className="serif text-2xl transition-colors group-hover:text-blush-800">{b.name}</h3>
             <p className="mt-3 text-sm leading-relaxed text-ink-soft">{b.description}</p>
             <div className="mt-6 flex items-center justify-between">
               <span className="pill">{formatUSD(b.depositCents)} deposit</span>
-              <span className="text-sm font-medium text-blush-800">
-                Order →
+              <span className="inline-flex items-center gap-1 text-sm font-medium text-blush-800">
+                Order
+                <span className="transition-transform duration-300 ease-out group-hover:translate-x-1">→</span>
               </span>
             </div>
           </Link>

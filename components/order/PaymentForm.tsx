@@ -29,6 +29,7 @@ export default function PaymentForm({ orderId }: { orderId: string }) {
 
   const [order, setOrder] = useState<OrderSummary | null>(null);
   const [orderError, setOrderError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const [card, setCard] = useState<Card | null>(null);
   const [sdkReady, setSdkReady] = useState(false);
@@ -37,12 +38,21 @@ export default function PaymentForm({ orderId }: { orderId: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [payError, setPayError] = useState<string | null>(null);
 
-  // Fetch order summary so we can show what they're paying for.
+  // Fetch order summary so we can show what they're paying for. Re-runs when
+  // reloadKey changes so the customer can retry a transient failure instead of
+  // hitting a dead end at the moment they're trying to pay.
   useEffect(() => {
     let cancelled = false;
+    setOrderError(null);
     fetch(`/api/orders/${orderId}`)
       .then(async (res) => {
-        if (!res.ok) throw new Error("Could not load your order.");
+        if (!res.ok) {
+          throw new Error(
+            res.status === 404
+              ? "We couldn't find this order. It may have expired — please start your order again."
+              : "We couldn't load your order right now. Please try again in a moment.",
+          );
+        }
         const data = (await res.json()) as OrderSummary;
         if (!cancelled) setOrder({ ...data, id: orderId });
       })
@@ -52,7 +62,7 @@ export default function PaymentForm({ orderId }: { orderId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [orderId]);
+  }, [orderId, reloadKey]);
 
   // Initialize Square Web Payments SDK once we have the order amount.
   useEffect(() => {
@@ -233,10 +243,42 @@ export default function PaymentForm({ orderId }: { orderId: string }) {
   }
 
   if (orderError) {
-    return <p className="text-sm text-red-600">{orderError}</p>;
+    return (
+      <div className="rounded-3xl border border-blush-200 bg-white/75 p-6 shadow-card backdrop-blur">
+        <p className="serif text-lg text-ink">We hit a snag loading your order</p>
+        <p className="mt-2 text-sm text-ink-soft">{orderError}</p>
+        <div className="mt-5 flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={() => setReloadKey((k) => k + 1)}
+            className="btn-primary"
+          >
+            Try again
+          </button>
+          <a href="/order" className="btn-secondary">
+            Start over
+          </a>
+        </div>
+        <p className="mt-4 text-[11px] text-ink-soft">
+          If this keeps happening, message Dar at{" "}
+          <a href="mailto:petalsbydar@gmail.com" className="underline">
+            petalsbydar@gmail.com
+          </a>{" "}
+          and your bouquet will be held.
+        </p>
+      </div>
+    );
   }
   if (!order) {
-    return <p className="text-sm text-ink-soft">Loading your order…</p>;
+    return (
+      <div className="flex items-center gap-2 text-sm text-ink-soft">
+        <svg className="animate-spin" viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden>
+          <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="3" opacity="0.25" />
+          <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+        </svg>
+        Loading your order…
+      </div>
+    );
   }
 
   const amountCents =
@@ -244,33 +286,76 @@ export default function PaymentForm({ orderId }: { orderId: string }) {
   const remainderCents =
     order.paymentType === "full" ? 0 : order.totalAmountCents - order.depositAmountCents;
 
+  const payingFull = order.paymentType === "full";
+
   return (
-    <div className="space-y-6">
-      {/* Order summary band */}
-      <div className="card-pink flex flex-wrap items-baseline justify-between gap-2">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-blush-700">
-            {order.paymentType === "full" ? "Paying in full" : "Paying deposit"}
+    <div className="space-y-5">
+      {/* Receipt-style order summary — names what they're buying and breaks the
+          amounts down clearly so there are no surprises before they pay. */}
+      <div className="reveal overflow-hidden rounded-3xl border border-blush-200 bg-white/75 shadow-card backdrop-blur">
+        <div className="border-b border-blush-100 bg-gradient-to-br from-blush-50 to-white px-6 py-4">
+          <p className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-blush-700">
+              Your order
+            </span>
+            {order.galleryStyle && (
+              <span className="pill text-[10px]">{order.galleryStyle}</span>
+            )}
           </p>
-          <p className="serif mt-1 text-3xl">{formatPrice(amountCents)}</p>
+          <p className="serif mt-1 text-lg text-ink">
+            Bouquet for {order.customerName}
+          </p>
         </div>
-        {remainderCents > 0 && (
-          <p className="text-xs text-blush-700">
-            <span className="serif text-base">{formatPrice(remainderCents)}</span>{" "}
-            remainder at pickup
+
+        <dl className="space-y-2.5 px-6 py-5 text-sm">
+          <div className="flex items-baseline justify-between">
+            <dt className="text-ink-soft">Bouquet total</dt>
+            <dd className="font-medium text-ink">
+              {formatPrice(order.totalAmountCents)}
+            </dd>
+          </div>
+          {!payingFull && (
+            <div className="flex items-baseline justify-between text-ink-soft">
+              <dt>Remainder at pickup</dt>
+              <dd>{formatPrice(remainderCents)}</dd>
+            </div>
+          )}
+          <div className="mt-1 flex items-baseline justify-between border-t border-dashed border-blush-200 pt-3">
+            <dt className="text-[11px] font-semibold uppercase tracking-[0.14em] text-blush-700">
+              {payingFull ? "Paying now, in full" : "Deposit due now"}
+            </dt>
+            <dd className="serif text-3xl text-ink">{formatPrice(amountCents)}</dd>
+          </div>
+        </dl>
+
+        {!payingFull && (
+          <p className="border-t border-blush-100 bg-blush-50/50 px-6 py-3 text-center text-[11px] text-blush-700">
+            Your deposit reserves your bouquet · pay the rest when you pick it up
           </p>
         )}
       </div>
 
       {/* Unified payment card */}
-      <div className="rounded-3xl border border-blush-200 bg-white/70 p-6 shadow-card backdrop-blur">
+      <div className="reveal rounded-3xl border border-blush-200 bg-white/75 p-6 shadow-card backdrop-blur" style={{ animationDelay: "90ms" }}>
+        {/* Secure header — quiet trust signal at the top of the pay box. */}
+        <div className="mb-5 flex items-center justify-between">
+          <p className="serif text-xl text-ink">Checkout</p>
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-blush-700">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <rect x="3" y="11" width="18" height="11" rx="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+            Secure checkout
+          </span>
+        </div>
+
         {sdkError ? (
           <p className="text-sm text-red-700">{sdkError}</p>
         ) : (
           <div className="space-y-5">
-            {/* Wallets — each constrained to the same width/height for alignment.
-                Square renders the official branded button inside; we just give
-                them a consistent shell. */}
+            {/* Wallets — fastest path, presented first. Each constrained to the
+                same width/height for alignment. Square renders the official
+                branded button inside; we just give them a consistent shell. */}
             <div className="mx-auto w-full max-w-sm space-y-2.5">
               <div
                 ref={applePayButtonRef}
@@ -292,22 +377,67 @@ export default function PaymentForm({ orderId }: { orderId: string }) {
               <p className="label">Card details</p>
               <div
                 ref={cardContainerRef}
-                className="mt-2 min-h-[60px] rounded-xl border border-blush-200 bg-white px-3 py-2"
+                className="mt-2 min-h-[60px] rounded-xl border border-blush-200 bg-white px-3 py-2 transition focus-within:border-blush-500 focus-within:ring-2 focus-within:ring-blush-200"
               />
             </div>
 
-            {payError && <p className="text-sm text-red-600">{payError}</p>}
+            {payError && (
+              <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+                {payError}
+              </p>
+            )}
 
             <button
               type="button"
               onClick={onPayCard}
               disabled={!sdkReady || submitting}
-              className="btn-primary w-full disabled:opacity-50"
+              className="btn-primary w-full py-4 text-base disabled:opacity-50"
             >
-              {submitting ? "Processing…" : `Pay ${formatPrice(amountCents)} →`}
+              {submitting ? (
+                <span className="inline-flex items-center gap-2">
+                  <svg className="animate-spin" viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden>
+                    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="3" opacity="0.25" />
+                    <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                  </svg>
+                  Processing…
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <rect x="3" y="11" width="18" height="11" rx="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                  Pay {formatPrice(amountCents)}
+                </span>
+              )}
             </button>
 
             <AcceptedCardsRow />
+
+            {/* Reassurance row — the cluster of small trust signals that nudge
+                hesitant buyers over the line. */}
+            <div className="trust-row border-t border-blush-100 pt-4">
+              <span className="trust-item">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M12 2 4 6v6c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V6l-8-4Z" />
+                  <path d="m9 12 2 2 4-4" />
+                </svg>
+                256-bit encrypted
+              </span>
+              <span className="trust-item">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+                Powered by Square
+              </span>
+              <span className="trust-item">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 7v5l3 2" />
+                </svg>
+                Handcrafted to order
+              </span>
+            </div>
           </div>
         )}
       </div>

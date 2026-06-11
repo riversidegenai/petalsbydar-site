@@ -30,7 +30,21 @@ export async function POST(req: Request) {
     );
   }
 
-  const [order] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
+  let order;
+  try {
+    [order] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
+  } catch (err) {
+    // Database unreachable (e.g. paused Supabase project). Fail with a clear
+    // message rather than a bodyless 500 so the buyer knows it's not their card.
+    console.error("[payments] failed to load order — database error:", err);
+    return NextResponse.json(
+      {
+        error:
+          "We couldn't reach our system to process your payment. Your card was not charged — please try again shortly.",
+      },
+      { status: 503 },
+    );
+  }
   if (!order) {
     return NextResponse.json({ error: "Order not found" }, { status: 404 });
   }

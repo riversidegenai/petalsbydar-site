@@ -25,6 +25,11 @@
   --ink-soft: #6c4453;
   --accent: #e11d48;
   --accent-strong: #be123c;
+  /* Botanical greens for organic accents (leaf/stem details) */
+  --leaf: #6f8f6a;
+  --leaf-soft: #9bb596;
+  /* Organic easing — a gentle settle, like a petal coming to rest */
+  --ease-organic: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 html,
@@ -32,6 +37,7 @@ body {
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 body {
@@ -41,6 +47,24 @@ body {
     radial-gradient(55% 45% at 100% 100%, #ffbed0 0%, transparent 65%),
     var(--bg);
   min-height: 100vh;
+}
+
+/* Fine grain overlay — adds organic, paper-like texture so the pinks read
+   as petals/paper rather than a flat digital gradient. Pointer-events off so
+   it never intercepts clicks. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+body > * {
+  position: relative;
+  z-index: 1;
 }
 
 .serif {
@@ -55,11 +79,32 @@ body {
 }
 
 .btn-primary {
-  @apply inline-flex items-center justify-center rounded-full bg-blush-700 px-6 py-3 text-sm font-medium text-white shadow-glow transition hover:bg-blush-800;
+  @apply relative inline-flex items-center justify-center overflow-hidden rounded-full bg-blush-700 px-6 py-3 text-sm font-medium text-white shadow-glow transition-all duration-300 hover:bg-blush-800 hover:shadow-[0_18px_50px_-12px_rgba(228,60,110,0.6)] active:scale-[0.98];
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 40%);
+}
+
+/* Soft sheen sweep on the primary CTA — a single, tasteful highlight that
+   draws the eye toward "Order"/"Pay" without feeling gimmicky. */
+.btn-primary::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.35) 50%,
+    transparent 70%
+  );
+  transform: translateX(-130%);
+  transition: transform 0.7s var(--ease-organic);
+}
+
+.btn-primary:hover::after {
+  transform: translateX(130%);
 }
 
 .btn-secondary {
-  @apply inline-flex items-center justify-center rounded-full border border-blush-300 bg-white/70 px-6 py-3 text-sm font-medium text-blush-800 backdrop-blur transition hover:bg-white;
+  @apply inline-flex items-center justify-center rounded-full border border-blush-300 bg-white/70 px-6 py-3 text-sm font-medium text-blush-800 backdrop-blur transition-all duration-300 hover:border-blush-400 hover:bg-white active:scale-[0.98];
 }
 
 .pill {
@@ -92,6 +137,52 @@ body {
 
 .label {
   @apply block text-[11px] font-semibold uppercase tracking-[0.14em] text-blush-700;
+}
+
+/* Staggered entrance — elements rise and fade in like petals settling.
+   Apply .reveal and an inline animation-delay for an orchestrated page load. */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.reveal {
+  opacity: 0;
+  animation: rise-in 0.9s var(--ease-organic) forwards;
+}
+
+/* Trust row used at checkout — quiet reassurance marks that make spending
+   feel safe (secure, encrypted, no surprise charges). */
+.trust-row {
+  @apply flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-[11px] text-ink-soft;
+}
+
+.trust-item {
+  @apply inline-flex items-center gap-1.5;
+}
+
+/* A soft botanical glow that breathes — used behind hero imagery to add the
+   sense of a living, organic backdrop. */
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.06);
+    opacity: 0.85;
+  }
+}
+
+.breathe {
+  animation: breathe 9s ease-in-out infinite;
 }
 
 @keyframes marquee {
@@ -144,5 +235,13 @@ body {
   .petal {
     animation: none;
     display: none;
+  }
+  .reveal,
+  .breathe,
+  .btn-primary::after {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
 }

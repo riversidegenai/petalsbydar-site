@@ -9,41 +9,53 @@ const STEPS: { id: Step; label: string }[] = [
 
 export default function Stepper({ current }: { current: Step }) {
   const idx = STEPS.findIndex((s) => s.id === current);
+  const progress = STEPS.length > 1 ? idx / (STEPS.length - 1) : 0;
+
   return (
-    <ol className="flex flex-wrap items-center gap-3 text-xs">
-      {STEPS.map((s, i) => {
-        const done = i < idx;
-        const active = i === idx;
-        return (
-          <li key={s.id} className="flex items-center gap-3">
-            <span
-              className={`flex items-center gap-2 rounded-full border px-3 py-1.5 transition ${
-                active
-                  ? "border-blush-600 bg-blush-50 text-blush-900"
-                  : done
-                    ? "border-blush-300 bg-blush-100/60 text-blush-800"
-                    : "border-blush-100 bg-white/70 text-blush-400"
-              }`}
-            >
+    <div className="relative">
+      {/* Connecting track — a soft line behind the dots that fills with blush
+          as the customer advances, giving a clear sense of momentum. */}
+      <div className="pointer-events-none absolute left-0 right-0 top-[14px] hidden px-[7%] sm:block">
+        <div className="relative h-0.5 rounded-full bg-blush-100">
+          <div
+            className="absolute inset-y-0 left-0 rounded-full bg-blush-500 transition-[width] duration-700 ease-out"
+            style={{ width: `${progress * 100}%` }}
+          />
+        </div>
+      </div>
+
+      <ol className="relative flex items-start justify-between gap-1 text-xs sm:gap-3">
+        {STEPS.map((s, i) => {
+          const done = i < idx;
+          const active = i === idx;
+          return (
+            <li key={s.id} className="flex flex-1 flex-col items-center gap-2">
               <span
-                className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
+                className={`flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold ring-4 ring-[var(--bg)] transition-all duration-300 ${
                   done
                     ? "bg-blush-700 text-white"
                     : active
-                      ? "bg-blush-600 text-white"
-                      : "bg-blush-100 text-blush-500"
+                      ? "scale-110 bg-blush-600 text-white shadow-glow"
+                      : "bg-blush-100 text-blush-400"
                 }`}
               >
                 {done ? "✓" : i + 1}
               </span>
-              <span className="font-medium uppercase tracking-[0.14em]">{s.label}</span>
-            </span>
-            {i < STEPS.length - 1 && (
-              <span className="hidden h-px w-8 border-t border-dashed border-blush-300 sm:inline-block" />
-            )}
-          </li>
-        );
-      })}
-    </ol>
+              <span
+                className={`text-center text-[10px] font-semibold uppercase tracking-[0.14em] transition-colors ${
+                  active
+                    ? "text-blush-900"
+                    : done
+                      ? "text-blush-700"
+                      : "text-blush-400"
+                }`}
+              >
+                {s.label}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
   );
 }

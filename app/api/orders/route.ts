@@ -24,24 +24,40 @@ export async function POST(req: Request) {
   const paymentType: "deposit" | "full" =
     body.paymentType === "full" && stylePhoto ? "full" : "deposit";
 
-  const [row] = await db
-    .insert(orders)
-    .values({
-      bouquetType: bouquet.id,
-      customerName: body.customerName,
-      phone: body.phone,
-      email: body.email,
-      instagram: body.instagram ?? null,
-      notes: body.notes ?? null,
-      inspirationUrls: body.inspirationUrls ?? [],
-      inspirationLinks: body.inspirationLinks ?? [],
-      galleryStyle,
-      totalAmountCents: totalCents,
-      depositAmountCents: depositCents,
-      paymentType,
-      status: "pending_payment",
-    })
-    .returning();
+  let row;
+  try {
+    [row] = await db
+      .insert(orders)
+      .values({
+        bouquetType: bouquet.id,
+        customerName: body.customerName,
+        phone: body.phone,
+        email: body.email,
+        instagram: body.instagram ?? null,
+        notes: body.notes ?? null,
+        inspirationUrls: body.inspirationUrls ?? [],
+        inspirationLinks: body.inspirationLinks ?? [],
+        galleryStyle,
+        totalAmountCents: totalCents,
+        depositAmountCents: depositCents,
+        paymentType,
+        status: "pending_payment",
+      })
+      .returning();
+  } catch (err) {
+    // Most likely the database is unreachable (e.g. a paused Supabase project)
+    // or misconfigured. Without this, the route emits a bodyless 500 and the
+    // customer is silently stranded with no path to checkout. Log loudly and
+    // return a JSON message the form can show.
+    console.error("[orders] failed to save order — database error:", err);
+    return NextResponse.json(
+      {
+        error:
+          "We couldn't save your order right now. This is on our end — please try again in a moment, or message petalsbydar@gmail.com and we'll take your order directly.",
+      },
+      { status: 503 },
+    );
+  }
 
   // Notify the owner so she can match this submission with the Square
   // appointment that comes in next. No-op without RESEND_API_KEY.
