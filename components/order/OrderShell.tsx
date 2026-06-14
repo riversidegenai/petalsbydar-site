@@ -14,7 +14,7 @@ export default function OrderShell({
       <span className="pill">Order</span>
       <h1 className="serif mt-4 text-4xl leading-tight md:text-5xl">Order your bouquet</h1>
       <p className="mt-3 max-w-xl text-sm text-ink-soft">
-        Pick the kind of bouquet, tell us a little about who it&apos;s for, then book a pickup time and pay your deposit through Square. Pay the rest when you pick it up.
+        Pick the kind of bouquet, tell us about who it&apos;s for, and share any inspiration — pictures or links — so Dar can build it around exactly what you have in mind.
       </p>
       <div className="mt-8">
         <Stepper current={step} />

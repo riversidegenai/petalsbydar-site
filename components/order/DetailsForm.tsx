@@ -155,6 +155,18 @@ export default function DetailsForm() {
                 </button>
               </div>
 
+              {/* Live summary of what they'll pay now — updates the instant they
+                  toggle deposit/full, so the headline number always matches the
+                  selected option (previously the price line stayed at full). */}
+              <div className="mt-1 flex items-baseline justify-between rounded-2xl bg-blush-50/70 px-4 py-3">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-blush-700">
+                  You&apos;ll pay now
+                </span>
+                <span className="serif text-2xl text-ink transition-all">
+                  {formatPrice(payNowCents)}
+                </span>
+              </div>
+
               <Link
                 href="/#gallery"
                 className="mt-2 self-start text-xs text-blush-700 underline hover:text-blush-900"
@@ -166,23 +178,19 @@ export default function DetailsForm() {
         </div>
       )}
 
-      {/* Generic "Selected" header — only when they didn't pick a specific photo */}
+      {/* Generic "Selected" header — only when they didn't pick a specific photo.
+          Leads with describing the bouquet + inspiration, not deposit talk. */}
       {!cameFromGallery && (
-        <div className="card-pink flex items-center justify-between gap-4">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-blush-700">
-              Selected
-            </p>
-            <p className="serif mt-1 text-2xl">{bouquet!.name}</p>
-            <p className="mt-1 text-xs text-blush-700">
-              Pick a style below — or just tell Dar what you have in mind.
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-xs text-blush-700">Deposit today</p>
-            <p className="serif text-2xl">{formatPrice(depositCents)}</p>
-            <p className="text-xs text-blush-700">Remainder at pickup</p>
-          </div>
+        <div className="card-pink">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-blush-700">
+            Selected
+          </p>
+          <p className="serif mt-1 text-2xl">{bouquet!.name}</p>
+          <p className="mt-1 text-sm text-ink-soft">
+            Tell Dar what you have in mind below — the occasion, your colors, who
+            it&apos;s for — and share any inspiration pictures or links. Pick a
+            style further down, or describe your own.
+          </p>
         </div>
       )}
 
@@ -221,26 +229,26 @@ export default function DetailsForm() {
         />
       </div>
 
-      {/* Inspiration upload + style picker only appear when they're still browsing */}
-      {!cameFromGallery && (
-        <>
-          <InspirationUpload
-            urls={inspirationUrls}
-            setUrls={setInspirationUrls}
-            links={inspirationLinks}
-            setLinks={setInspirationLinks}
-          />
+      {/* Inspiration drop — always available so the client can share pictures
+          and reference links for Dar, whether they picked a style or not. */}
+      <InspirationUpload
+        urls={inspirationUrls}
+        setUrls={setInspirationUrls}
+        links={inspirationLinks}
+        setLinks={setInspirationLinks}
+      />
 
-          <StylePicker
-            variant={
-              bouquetId === "occasion"
-                ? "occasion"
-                : bouquetId === "just_because"
-                  ? "just_because"
-                  : "custom"
-            }
-          />
-        </>
+      {/* Style picker only appears when they're still browsing (no photo chosen). */}
+      {!cameFromGallery && (
+        <StylePicker
+          variant={
+            bouquetId === "occasion"
+              ? "occasion"
+              : bouquetId === "just_because"
+                ? "just_because"
+                : "custom"
+          }
+        />
       )}
 
       <div className="rounded-2xl border border-blush-200 bg-white/70 p-5 text-sm text-ink-soft">

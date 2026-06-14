@@ -2,17 +2,34 @@ import Image from "next/image";
 import Link from "next/link";
 import { GALLERY_PHOTOS, filenameToSlug, formatPrice } from "@/lib/gallery";
 
-export default function Gallery() {
+// Homepage shows a trimmed "Recent work" preview (first `limit` photos) with a
+// link to the full gallery page. The /gallery page renders all photos by
+// passing `showAll`. Keeping one component means the card styling stays in sync.
+export default function Gallery({
+  limit = 21,
+  showAll = false,
+  heading,
+}: {
+  limit?: number;
+  showAll?: boolean;
+  heading?: React.ReactNode;
+}) {
+  const photos = showAll ? GALLERY_PHOTOS : GALLERY_PHOTOS.slice(0, limit);
+
   return (
     <section id="gallery" className="mx-auto max-w-6xl scroll-mt-24 px-6 py-20">
       <div className="mb-10">
         <span className="pill mb-5">Gallery</span>
         <h2 className="serif text-4xl leading-tight md:text-5xl">
-          <span className="italic-accent">Recent</span> work.
+          {heading ?? (
+            <>
+              <span className="italic-accent">Recent</span> work.
+            </>
+          )}
         </h2>
       </div>
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-        {GALLERY_PHOTOS.map((photo, i) => (
+        {photos.map((photo, i) => (
           <Link
             key={photo.file}
             href={`/gallery/${filenameToSlug(photo.file)}`}
@@ -44,6 +61,15 @@ export default function Gallery() {
           </Link>
         ))}
       </div>
+
+      {/* On the homepage preview, invite them into the full gallery. */}
+      {!showAll && GALLERY_PHOTOS.length > limit && (
+        <div className="mt-12 flex justify-center">
+          <Link href="/gallery" className="btn-secondary">
+            View full gallery →
+          </Link>
+        </div>
+      )}
     </section>
   );
 }

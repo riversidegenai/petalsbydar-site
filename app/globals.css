@@ -38,6 +38,9 @@ body {
   color: var(--ink);
   font-family: var(--font-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  /* Guard against decorative overhangs (hero bloom, drifting petals) creating
+     a horizontal scrollbar on narrow/mobile viewports. */
+  overflow-x: hidden;
 }
 
 body {
@@ -185,20 +188,97 @@ body > * {
   animation: breathe 9s ease-in-out infinite;
 }
 
+/* Plush pink hero bloom — multiple soft rose radials layered into a velvety
+   haze that slowly drifts, giving the hero depth and warmth. Blurred so the
+   layers melt together into "plush" rather than reading as distinct blobs. */
+.hero-bloom {
+  background:
+    radial-gradient(38% 44% at 22% 28%, rgba(236, 94, 132, 0.42), transparent 70%),
+    radial-gradient(42% 48% at 80% 22%, rgba(248, 182, 197, 0.5), transparent 72%),
+    radial-gradient(46% 50% at 60% 80%, rgba(216, 58, 106, 0.34), transparent 74%),
+    radial-gradient(40% 46% at 10% 78%, rgba(244, 138, 163, 0.38), transparent 72%);
+  filter: blur(36px);
+  opacity: 0.9;
+  animation: bloom-drift 16s ease-in-out infinite;
+}
+
+@keyframes bloom-drift {
+  0%,
+  100% {
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    transform: translateX(-50%) scale(1.08) translateY(-1.5%);
+  }
+}
+
 @keyframes marquee {
   0% { transform: translate3d(0, 0, 0); }
   100% { transform: translate3d(-50%, 0, 0); }
 }
 
 .marquee-track {
-  animation: marquee 38s linear infinite;
+  /* The track renders the photo list twice, so translating exactly -50% lands
+     the second copy precisely where the first started — the loop wraps with no
+     visible jump. linear timing + infinite keeps it gliding at a constant
+     speed; it never pauses or eases, so there's no stutter at the seam. */
+  animation: marquee 90s linear infinite;
   will-change: transform;
   backface-visibility: hidden;
   transform: translate3d(0, 0, 0);
 }
 
-.marquee-track:hover {
-  animation-play-state: paused;
+/* Respect users who ask for reduced motion — stop the scroll for them only. */
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none;
+  }
+}
+
+/* Falling petals — drift downward from above the viewport to below it, swaying
+   side to side and tumbling as they go. The animation runs continuously; the
+   FallingPetals component speeds it up while the user is actively scrolling by
+   adjusting animation-duration via a CSS variable, so petals "shower" on scroll
+   and settle to a slow drift at rest. GPU-friendly transforms only. */
+@keyframes petal-fall {
+  0% {
+    transform: translate3d(0, -10vh, 0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: var(--opacity, 0.5);
+  }
+  80% {
+    opacity: var(--opacity, 0.5);
+  }
+  100% {
+    /* Falls a viewport's worth; the hero layer (overflow-hidden) clips petals
+       at its bottom edge, so they never drift down over the flower sections. */
+    transform: translate3d(var(--drift, 24px), 95vh, 0) rotate(var(--spin, 320deg));
+    opacity: 0;
+  }
+}
+
+.petal-fall {
+  position: absolute;
+  top: 0;
+  width: var(--size, 18px);
+  height: var(--size, 18px);
+  color: var(--hue, #f8b6c5);
+  opacity: 0;
+  will-change: transform, opacity;
+  animation-name: petal-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  /* base duration; component scales this down on scroll for a "shower" */
+  animation-duration: var(--fall-duration, 12s);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .petal-fall {
+    animation: none;
+    display: none;
+  }
 }
 
 @keyframes petal-float {
@@ -238,6 +318,7 @@ body > * {
   }
   .reveal,
   .breathe,
+  .hero-bloom,
   .btn-primary::after {
     animation: none;
     opacity: 1;

@@ -16,12 +16,17 @@ export default function InspirationUpload({
   const [linkDraft, setLinkDraft] = useState("");
   const [uploading, setUploading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  // When photo storage isn't available, we steer the customer to links instead
+  // of showing a red error — they can still share inspiration and place the
+  // order. This is a gentle notice, not a failure.
+  const [linksOnlyNotice, setLinksOnlyNotice] = useState<string | null>(null);
 
   async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
     if (!files?.length) return;
     setUploading(true);
     setErr(null);
+    setLinksOnlyNotice(null);
     try {
       const newUrls: string[] = [];
       for (const file of Array.from(files)) {
@@ -30,7 +35,17 @@ export default function InspirationUpload({
           body: file,
         });
         if (!res.ok) {
-          const errData = await res.json().catch(() => null);
+          const errData = (await res.json().catch(() => null)) as
+            | { error?: string; storageUnconfigured?: boolean }
+            | null;
+          // Storage not set up → friendly "use links instead", not an error.
+          if (res.status === 503 && errData?.storageUnconfigured) {
+            setLinksOnlyNotice(
+              errData.error ??
+                "Photo uploads aren't available right now — paste a reference link below instead.",
+            );
+            return;
+          }
           throw new Error(errData?.error ?? "Upload failed. Please try again.");
         }
         const data = (await res.json()) as { url: string };
@@ -73,6 +88,11 @@ export default function InspirationUpload({
       </label>
       {uploading && <p className="text-xs text-blush-700">Uploading…</p>}
       {err && <p className="text-xs text-red-600">{err}</p>}
+      {linksOnlyNotice && (
+        <p className="rounded-xl bg-blush-50 px-3 py-2 text-xs text-blush-800">
+          {linksOnlyNotice}
+        </p>
+      )}
       {urls.length > 0 && (
         <ul className="text-xs text-blush-800">
           {urls.map((u) => (

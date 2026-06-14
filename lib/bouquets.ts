@@ -13,7 +13,8 @@ export const BOUQUETS: Bouquet[] = [
     id: "custom",
     name: "Custom Bouquet",
     priceCents: 10000,
-    depositCents: 4000,
+    // 50% deposit, rounded to nearest $5 (see depositForCents in gallery.ts).
+    depositCents: 5000,
     description:
       "Hand-made bouquet built around your occasion, your colors, and the message you want to send. Includes consultation, ribbon + wrap of your choice, and a hand-written tag.",
   },
@@ -21,7 +22,8 @@ export const BOUQUETS: Bouquet[] = [
     id: "occasion",
     name: "Occasion Bouquet",
     priceCents: 10000,
-    depositCents: 4000,
+    // 50% deposit, rounded to nearest $5 (see depositForCents in gallery.ts).
+    depositCents: 5000,
     description:
       "Themed for the moment — Mother's Day, Valentine's, birthdays, graduations, anniversaries. Comes with a printed sash and signature ribbon.",
   },
@@ -29,7 +31,8 @@ export const BOUQUETS: Bouquet[] = [
     id: "just_because",
     name: "Just-Because Bouquet",
     priceCents: 10000,
-    depositCents: 4000,
+    // 50% deposit, rounded to nearest $5 (see depositForCents in gallery.ts).
+    depositCents: 5000,
     description:
       "No occasion needed. A surprise pick-me-up for someone who deserves one — partners, parents, friends, yourself.",
   },

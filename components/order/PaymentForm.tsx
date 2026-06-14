@@ -14,7 +14,7 @@ import AcceptedCardsRow from "./AcceptedCardsRow";
 
 type OrderSummary = {
   id: string;
-  customerName: string;
+  customerFirstName: string;
   totalAmountCents: number;
   depositAmountCents: number;
   paymentType: "deposit" | "full";
@@ -298,12 +298,9 @@ export default function PaymentForm({ orderId }: { orderId: string }) {
             <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-blush-700">
               Your order
             </span>
-            {order.galleryStyle && (
-              <span className="pill text-[10px]">{order.galleryStyle}</span>
-            )}
           </p>
           <p className="serif mt-1 text-lg text-ink">
-            Bouquet for {order.customerName}
+            Bouquet for {order.customerFirstName}
           </p>
         </div>
 

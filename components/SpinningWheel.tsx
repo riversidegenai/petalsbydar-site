@@ -8,10 +8,16 @@ const ALL = [
 ];
 
 export default function SpinningWheel() {
-  const loop = [...ALL, ...ALL];
+  // The CSS animation translates the track by exactly -50%, so the loop is
+  // seamless only when the track is two identical halves. We build one "half"
+  // that repeats the photo list enough times to overflow even very wide
+  // screens (no gap at the seam), then render that half twice.
+  const half = [...ALL, ...ALL];
+  const loop = [...half, ...half];
   return (
     <section className="overflow-hidden border-y border-blush-100 bg-white/40 py-8">
-      <div className="marquee-track flex w-max">
+      {/* aria-hidden: this is a decorative, infinitely scrolling strip. */}
+      <div className="marquee-track flex w-max" aria-hidden="true">
         {loop.map((file, i) => (
           <div
             key={i}

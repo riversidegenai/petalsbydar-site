@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { BOUQUETS, formatUSD } from "@/lib/bouquets";
+import { BOUQUETS } from "@/lib/bouquets";
 
 export default function Bouquets() {
   const [pressed, setPressed] = useState<string | null>(null);
@@ -31,9 +31,9 @@ export default function Bouquets() {
             <h3 className="serif text-2xl transition-colors group-hover:text-blush-800">{b.name}</h3>
             <p className="mt-3 text-sm leading-relaxed text-ink-soft">{b.description}</p>
             <div className="mt-6 flex items-center justify-between">
-              <span className="pill">{formatUSD(b.depositCents)} deposit</span>
+              <span className="pill">Tell us what you want</span>
               <span className="inline-flex items-center gap-1 text-sm font-medium text-blush-800">
-                Order
+                Start your order
                 <span className="transition-transform duration-300 ease-out group-hover:translate-x-1">→</span>
               </span>
             </div>

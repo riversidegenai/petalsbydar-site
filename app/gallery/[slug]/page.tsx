@@ -63,7 +63,7 @@ export default async function GalleryPhotoPage({
               <p className="mt-2 text-xs italic text-blush-800">{photo.note}</p>
             )}
             <p className="mt-1 text-xs text-blush-700">
-              Deposit secures your bouquet · Remainder paid at pickup
+              Made-to-order · Customized around your inspiration
             </p>
           </div>
 

@@ -18,8 +18,10 @@ const csp = [
   "style-src 'self' 'unsafe-inline' https://*.squarecdn.com",
   // CashSans + Square fonts, incl. the cloudfront mirror Square documents.
   "font-src 'self' data: https://*.squarecdn.com https://d1g145x70srn7h.cloudfront.net",
-  // Button/wallet artwork.
-  "img-src 'self' data: blob: https://*.squarecdn.com https://*.squareup.com https://*.public.blob.vercel-storage.com",
+  // Button/wallet artwork + customer inspiration photos stored in Cloudflare R2
+  // (public r2.dev bucket URL). If you attach a custom domain to the bucket
+  // (e.g. media.petalsbydar.com), add it here too.
+  "img-src 'self' data: blob: https://*.squarecdn.com https://*.squareup.com https://*.public.blob.vercel-storage.com https://*.r2.dev",
   // Tokenization + telemetry endpoints.
   "connect-src 'self' https://*.squarecdn.com https://*.squareup.com https://pci-connect.squareup.com https://o160250.ingest.sentry.io",
   // The hosted card/wallet iframes and the Cash App Pay frame.
@@ -31,6 +33,9 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "*.public.blob.vercel-storage.com" },
+      // Cloudflare R2 public bucket (inspiration photos). Add your custom
+      // domain here too if you attach one to the bucket.
+      { protocol: "https", hostname: "*.r2.dev" },
     ],
   },
   async headers() {

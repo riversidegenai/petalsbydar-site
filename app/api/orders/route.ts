@@ -4,8 +4,19 @@ import { orders } from "@/lib/schema";
 import { getBouquet } from "@/lib/bouquets";
 import { slugToPhoto, depositForCents } from "@/lib/gallery";
 import { sendOwnerNotification } from "@/lib/email";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
+  // Throttle order creation per IP: each saved order can fire an owner email,
+  // so this caps both spam orders and Resend-quota burn.
+  const limited = checkRateLimit(req, "orders", 10, 60_000);
+  if (limited.blocked) {
+    return NextResponse.json(
+      { error: "Too many requests. Please wait a moment and try again." },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSeconds) } },
+    );
+  }
+
   const body = await req.json();
   const bouquet = getBouquet(body.bouquetType);
   if (!bouquet) {

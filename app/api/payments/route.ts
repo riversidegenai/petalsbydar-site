@@ -4,8 +4,19 @@ import { eq } from "drizzle-orm";
 import { SquareClient, SquareEnvironment, SquareError } from "square";
 import { db } from "@/lib/db";
 import { orders } from "@/lib/schema";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
+  // Tight per-IP cap: a charge endpoint is a prime target for card testing
+  // (validating stolen card numbers via small auth attempts).
+  const limited = checkRateLimit(req, "payments", 8, 60_000);
+  if (limited.blocked) {
+    return NextResponse.json(
+      { error: "Too many payment attempts. Please wait a moment and try again." },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSeconds) } },
+    );
+  }
+
   const body = await req.json().catch(() => null);
   const orderId = body?.orderId as string | undefined;
   const sourceId = body?.sourceId as string | undefined;

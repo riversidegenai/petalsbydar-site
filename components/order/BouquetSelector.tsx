@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { BOUQUETS, formatUSD, type BouquetId } from "@/lib/bouquets";
+import { BOUQUETS, type BouquetId } from "@/lib/bouquets";
 
 export default function BouquetSelector() {
   const params = useSearchParams();
@@ -29,7 +29,7 @@ export default function BouquetSelector() {
               <h3 className="serif text-xl">{b.name}</h3>
               <p className="mt-3 text-xs leading-relaxed text-ink-soft">{b.description}</p>
               <div className="mt-5 flex items-center justify-between">
-                <span className="pill">{formatUSD(b.depositCents)} deposit</span>
+                <span className="pill">Tell us what you want</span>
                 {active && <span className="text-xs font-medium text-blush-700">Selected ✓</span>}
               </div>
             </button>
