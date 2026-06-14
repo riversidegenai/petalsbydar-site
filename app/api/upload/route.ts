@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { NextResponse } from "next/server";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { isR2Configured, uploadToR2 } from "@/lib/r2";
@@ -91,7 +92,7 @@ export async function POST(req: Request) {
     const publicUrl = await uploadToR2(key, bytes, contentType);
     return NextResponse.json({ url: publicUrl });
   } catch (err) {
-    console.error("[upload] R2 upload failed:", err);
+    Sentry.captureException(err, { tags: { route: "upload", step: "r2_put" } });
     return NextResponse.json(
       {
         error:

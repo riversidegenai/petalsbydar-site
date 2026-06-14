@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { orders } from "@/lib/schema";
@@ -60,7 +61,7 @@ export async function POST(req: Request) {
     // or misconfigured. Without this, the route emits a bodyless 500 and the
     // customer is silently stranded with no path to checkout. Log loudly and
     // return a JSON message the form can show.
-    console.error("[orders] failed to save order — database error:", err);
+    Sentry.captureException(err, { tags: { route: "orders", step: "db_insert" } });
     return NextResponse.json(
       {
         error:
@@ -73,7 +74,7 @@ export async function POST(req: Request) {
   // Notify the owner so she can match this submission with the Square
   // appointment that comes in next. No-op without RESEND_API_KEY.
   void sendOwnerNotification(row).catch((err) => {
-    console.error("sendOwnerNotification failed for order", row.id, err);
+    Sentry.captureException(err, { tags: { route: "orders", step: "email_notify" }, extra: { orderId: row.id } });
   });
 
   return NextResponse.json({ id: row.id });

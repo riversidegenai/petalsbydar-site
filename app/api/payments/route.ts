@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
   } catch (err) {
     // Database unreachable (e.g. paused Supabase project). Fail with a clear
     // message rather than a bodyless 500 so the buyer knows it's not their card.
-    console.error("[payments] failed to load order — database error:", err);
+    Sentry.captureException(err, { tags: { route: "payments", step: "db_select" } });
     return NextResponse.json(
       {
         error:
@@ -110,7 +111,7 @@ export async function POST(req: Request) {
         detail?.errors?.[0]?.detail ?? err.message ?? "Square rejected the payment.";
       return NextResponse.json({ error: message }, { status: 402 });
     }
-    console.error("payment failed", err);
+    Sentry.captureException(err, { tags: { route: "payments", step: "square_charge" } });
     return NextResponse.json(
       { error: "Payment failed unexpectedly. Please try again." },
       { status: 500 },
