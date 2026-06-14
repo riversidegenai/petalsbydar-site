@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/api/:path*"],
 };
 
 // Constant-time string comparison. Middleware runs on the Edge runtime where
@@ -28,7 +28,23 @@ function unauthorized() {
   });
 }
 
+function forbidden() {
+  return new NextResponse("Forbidden", { status: 403 });
+}
+
 export function middleware(req: NextRequest) {
+  // Block any request that hits /api/* without the Cloudflare origin secret.
+  // Cloudflare injects x-origin-secret on every proxied request via a
+  // Request Header Transform Rule. Direct-to-origin hits lack this header
+  // and are rejected before any serverless function starts.
+  if (req.nextUrl.pathname.startsWith("/api/")) {
+    const cfSecret = process.env.CF_SECRET;
+    const incomingSecret = req.headers.get("x-origin-secret");
+    if (cfSecret && !timingSafeEqual(incomingSecret ?? "", cfSecret)) {
+      return forbidden();
+    }
+  }
+
   const adminPassword = process.env.ADMIN_PASSWORD;
 
   // Fail closed: if no admin password is configured, the admin area is locked,
