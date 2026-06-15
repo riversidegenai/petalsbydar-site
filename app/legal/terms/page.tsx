@@ -10,7 +10,7 @@ export default function TermsPage() {
     <>
       <h1>Terms of Service</h1>
       <p className="text-xs uppercase tracking-widest text-blush-700">
-        Last updated: May 10, 2026
+        Last updated: June 14, 2026
       </p>
 
       <p>
@@ -53,7 +53,7 @@ export default function TermsPage() {
 
       <h2>Payment</h2>
       <p>
-        Payments are processed by Stripe. By placing an order, you confirm
+        Payments are processed by Square. By placing an order, you confirm
         that you are authorized to use the payment method provided. All prices
         are listed in U.S. dollars.
       </p>

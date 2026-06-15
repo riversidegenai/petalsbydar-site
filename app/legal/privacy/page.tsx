@@ -10,7 +10,7 @@ export default function PrivacyPage() {
     <>
       <h1>Privacy Policy</h1>
       <p className="text-xs uppercase tracking-widest text-blush-700">
-        Last updated: May 10, 2026
+        Last updated: June 14, 2026
       </p>
 
       <p>
@@ -28,7 +28,7 @@ export default function PrivacyPage() {
           photos or notes you provide.
         </li>
         <li>
-          <strong>Payment information:</strong> processed securely by Stripe.
+          <strong>Payment information:</strong> processed securely by Square.
           We never see or store your full card number.
         </li>
         <li>
@@ -52,7 +52,7 @@ export default function PrivacyPage() {
       </p>
       <ul>
         <li>
-          <strong>Stripe</strong> — payment processing
+          <strong>Square</strong> — payment processing
         </li>
         <li>
           <strong>Resend</strong> — order confirmation emails

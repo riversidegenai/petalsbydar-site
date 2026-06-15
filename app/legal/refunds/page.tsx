@@ -10,7 +10,7 @@ export default function RefundsPage() {
     <>
       <h1>Refund &amp; Cancellation Policy</h1>
       <p className="text-xs uppercase tracking-widest text-blush-700">
-        Last updated: May 10, 2026
+        Last updated: June 14, 2026
       </p>
 
       <p>
@@ -82,7 +82,7 @@ export default function RefundsPage() {
         <a href="mailto:petalsbydar@gmail.com">petalsbydar@gmail.com</a> with
         your order confirmation and a brief description of the issue. We
         respond within 1-2 business days. Approved refunds are processed back
-        to the original payment method through Stripe and typically take 5-10
+        to the original payment method through Square and typically take 5-10
         business days to appear.
       </p>
 
