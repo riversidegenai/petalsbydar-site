@@ -45,6 +45,11 @@ export function middleware(req: NextRequest) {
     }
   }
 
+  // Basic auth only applies to /admin routes, not /api routes.
+  if (!req.nextUrl.pathname.startsWith("/admin")) {
+    return NextResponse.next();
+  }
+
   const adminPassword = process.env.ADMIN_PASSWORD;
 
   // Fail closed: if no admin password is configured, the admin area is locked,

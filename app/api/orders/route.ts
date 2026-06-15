@@ -5,6 +5,7 @@ import { orders } from "@/lib/schema";
 import { getBouquet } from "@/lib/bouquets";
 import { slugToPhoto, depositForCents } from "@/lib/gallery";
 import { sendOwnerNotification } from "@/lib/email";
+import { sendOwnerSms } from "@/lib/sms";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
@@ -72,9 +73,12 @@ export async function POST(req: Request) {
   }
 
   // Notify the owner so she can match this submission with the Square
-  // appointment that comes in next. No-op without RESEND_API_KEY.
+  // appointment that comes in next. No-op without RESEND_API_KEY / Twilio keys.
   void sendOwnerNotification(row).catch((err) => {
     Sentry.captureException(err, { tags: { route: "orders", step: "email_notify" }, extra: { orderId: row.id } });
+  });
+  void sendOwnerSms(row).catch((err) => {
+    Sentry.captureException(err, { tags: { route: "orders", step: "sms_notify" }, extra: { orderId: row.id } });
   });
 
   return NextResponse.json({ id: row.id });
