@@ -37,7 +37,12 @@ export function middleware(req: NextRequest) {
   // Cloudflare injects x-origin-secret on every proxied request via a
   // Request Header Transform Rule. Direct-to-origin hits lack this header
   // and are rejected before any serverless function starts.
-  if (req.nextUrl.pathname.startsWith("/api/")) {
+  // /api/chat is browser-initiated (the AI chat bubble) so it cannot carry
+  // the server-side secret — it has its own per-IP rate limiting instead.
+  if (
+    req.nextUrl.pathname.startsWith("/api/") &&
+    !req.nextUrl.pathname.startsWith("/api/chat")
+  ) {
     const cfSecret = process.env.CF_SECRET;
     const incomingSecret = req.headers.get("x-origin-secret");
     if (cfSecret && !timingSafeEqual(incomingSecret ?? "", cfSecret)) {

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Fraunces, Inter } from "next/font/google";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import ChatBubble from "@/components/ChatBubble";
 import "./globals.css";
 
 const serif = Fraunces({
@@ -35,6 +36,7 @@ export default function RootLayout({
         <Header />
         <main>{children}</main>
         <Footer />
+        <ChatBubble />
       </body>
     </html>
   );
