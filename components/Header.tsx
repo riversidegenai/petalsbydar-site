@@ -44,7 +44,9 @@ export default function Header() {
                 <Link href="/faq" className="hover:text-blush-700">FAQ</Link>
                 <Link href="/#about" className="hover:text-blush-700">About</Link>
               </nav>
-              <Link href="/order" className="btn-primary hidden px-5 py-2 text-sm md:inline-flex">Order</Link>
+              <div className="hidden md:block">
+                <Link href="/order" className="btn-primary px-5 py-2 text-sm">Order</Link>
+              </div>
 
               {/* Hamburger — mobile only */}
               <button
