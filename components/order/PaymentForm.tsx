@@ -114,8 +114,11 @@ export default function PaymentForm({ orderId }: { orderId: string }) {
           if (cancelled) return;
           if (applePayButtonRef.current) {
             attachedApplePay = applePay;
-            applePayButtonRef.current.addEventListener("click", async () => {
-              await handleWalletTokenize(applePay, "Apple Pay");
+            // Do NOT await here — Safari requires tokenize() to be the first
+            // thing called synchronously in the user-gesture chain. Any await
+            // before tokenize() silently kills the Apple Pay sheet.
+            applePayButtonRef.current.addEventListener("click", () => {
+              void handleWalletTokenize(applePay, "Apple Pay");
             });
             applePayButtonRef.current.dataset.ready = "true";
           }

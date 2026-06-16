@@ -14,19 +14,24 @@ const csp = [
   "default-src 'self'",
   // Square SDK is loaded from squarecdn; 'unsafe-eval' is required by the SDK.
   // Square SDK + Cloudflare Web Analytics beacon (cloudflareinsights).
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.squarecdn.com https://*.squareup.com https://js.squareup.com https://static.cloudflareinsights.com",
+  // web.squarecdn.com listed explicitly in addition to the wildcard because some
+  // browsers do not treat *.squarecdn.com as matching the bare subdomain.
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.squarecdn.com https://web.squarecdn.com https://sandbox.web.squarecdn.com https://*.squareup.com https://js.squareup.com https://static.cloudflareinsights.com",
   // Square injects inline styles into its iframes.
-  "style-src 'self' 'unsafe-inline' https://*.squarecdn.com",
-  // CashSans + Square fonts, incl. the cloudfront mirror Square documents.
-  "font-src 'self' data: https://*.squarecdn.com https://d1g145x70srn7h.cloudfront.net",
+  "style-src 'self' 'unsafe-inline' https://*.squarecdn.com https://cash-f.squarecdn.com",
+  // CashSans + Square fonts. cash-f.squarecdn.com listed explicitly because
+  // some browsers do not apply *.squarecdn.com wildcards to all subdomains.
+  "font-src 'self' data: https://*.squarecdn.com https://cash-f.squarecdn.com https://d1g145x70srn7h.cloudfront.net",
   // Button/wallet artwork + customer inspiration photos stored in Cloudflare R2
   // (public r2.dev bucket URL). If you attach a custom domain to the bucket
   // (e.g. media.petalsbydar.com), add it here too.
-  "img-src 'self' data: blob: https://*.squarecdn.com https://*.squareup.com https://*.public.blob.vercel-storage.com https://*.r2.dev",
+  "img-src 'self' data: blob: https://*.squarecdn.com https://cash-f.squarecdn.com https://*.squareup.com https://*.public.blob.vercel-storage.com https://*.r2.dev",
   // Tokenization + telemetry endpoints.
-  "connect-src 'self' https://*.squarecdn.com https://*.squareup.com https://pci-connect.squareup.com https://o160250.ingest.sentry.io",
+  // Sentry uses both *.ingest.sentry.io and *.ingest.us.sentry.io depending on
+  // the org region — wildcard both so it works regardless of which DSN is used.
+  "connect-src 'self' https://*.squarecdn.com https://web.squarecdn.com https://*.squareup.com https://connect.squareup.com https://pci-connect.squareup.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io",
   // The hosted card/wallet iframes and the Cash App Pay frame.
-  "frame-src 'self' https://*.squarecdn.com https://*.squareup.com",
+  "frame-src 'self' https://*.squarecdn.com https://web.squarecdn.com https://*.squareup.com https://connect.squareup.com",
   "child-src 'self' https://*.squarecdn.com https://*.squareup.com",
 ].join("; ");
 

@@ -23,6 +23,9 @@ export const metadata: Metadata = {
   title: "Petals by Dar — Hand-made bouquets, made-to-order",
   description:
     "Petals by Dar is a custom bouquet studio crafting hand-made paper-rose and fresh-floral arrangements for every occasion.",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({
